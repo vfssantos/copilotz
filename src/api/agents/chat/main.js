@@ -1,7 +1,7 @@
 /**
  * Main function for the chat agent.
  * 
- * @param {Object} params - Function parameters.
+* @param {Object} params - Function parameters.
  * @param {string} params.instructions - Instructions for the agent.
  * @param {string|Array<Object>} params.input - User input, can be a string or an array of objects.
  * @param {string} params.input[].type - Type of the input, can be 'text' or 'image_url'.
@@ -12,10 +12,17 @@
  * @param {Object} params.user - User information.
  * @param {Object} params.thread - Thread information.
  * @param {Object} res - Response object.
+ * @param {Object} config - Configuration object.
+ * @param {Object} config.AI_CHAT_PROVIDER - AI chat provider configuration.
+ * @param {string} config.AI_CHAT_PROVIDER.provider - Provider name, e.g., 'openai'.
+ * @param {Object} config.AI_CHAT_PROVIDER.options - Additional options for the provider.
+ * @param {Object} env - Environment variables.
+ * @param {string} env.OPENAI_CREDENTIALS_apiKey - API key for OpenAI.
+ * @param {string} env.OTHER_PROVIDER_CREDENTIALS_apiKey - API key for another provider.
  * @returns {Promise<void>} - Returns a Promise that resolves when the function is completed.
  */
 
-const chatAgent = async ({ instructions, input, user, thread }, res) => {
+const chatAgent = async ({ instructions, input, user, thread, options }, res) => {
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
   const { __tags__, __requestId__, __executionId__, modules, resources, utils, env, models } = chatAgent;
@@ -103,7 +110,7 @@ const chatAgent = async ({ instructions, input, user, thread }, res) => {
   // 7.2. Execute AI Chat
   const { prompt, answer, tokens } = await aiChat(
     { instructions, messages: chatLogs },
-    res.stream,
+    options.stream ? res.stream : (() => { })
   );
 
   // 8. Return Response
