@@ -1,3 +1,4 @@
+import { array } from "https://deno.land/x/zod@v3.23.8/types.ts";
 
 const logQueue: any[] = [];
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -6,7 +7,7 @@ let isRunning = false;
 
 const processLogQueue = async () => {
     if (isRunning) return;
-    console.log('TASKS QUEUE', logQueue)
+    // console.log('TASKS QUEUE', logQueue)
     const errors = []
     isRunning = true;
     while (logQueue.length) {
@@ -35,7 +36,10 @@ export const beforeRun = ({ name, url, requestId, executionId, input, properties
             url,
             requestId,
             executionId,
-            input,
+            input: Object.entries(input).reduce((acc: any, [key, value]) => {
+                acc[key] = value;
+                return acc;
+            }, {}),
         }));
     }
     // console.log("Before run", JSON.stringify({ name, url, requestId, executionId, input }));

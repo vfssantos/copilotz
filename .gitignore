@@ -20,6 +20,9 @@ logs
 data
 cache
 
+# Deno lock file
+lock.json
+
 # Deno dependencies
 deps
 

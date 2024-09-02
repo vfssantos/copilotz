@@ -2,11 +2,7 @@ const middlewares: any = async (req: any) => {
 
     const { env } = middlewares;
 
-
-    env.ENV === 'production' &&
-        await validateRequest(req, env.PUBLIC_KEY);
-
-        console.log('REQUEST', req)
+    env.ENV === 'production' && await validateRequest(req, env.PUBLIC_KEY);
 
     return req;
 }

@@ -4,7 +4,6 @@ import * as security from 'axion-modules/connectors/security.js';
 
 export default ({ env, ...modules }: Record<string, any>) => {
 
-    
     const models = crud({
         schemas,
         config: {

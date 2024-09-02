@@ -1,147 +1,127 @@
+/**
+ * Main function for the chat agent.
+ * 
+ * @param {Object} params - Function parameters.
+ * @param {string} params.instructions - Instructions for the agent.
+ * @param {string|Array<Object>} params.input - User input, can be a string or an array of objects.
+ * @param {string} params.input[].type - Type of the input, can be 'text' or 'image_url'.
+ * @param {string} [params.input[].text] - Text input, required if type is 'text'.
+ * @param {Object} [params.input[].image_url] - Image URL input, required if type is 'image_url'.
+ * @param {string} params.input[].image_url.url - URL of the image, can be a regular URL or a base64 encoded image.
+ * @param {string} params.input[].image_url.detail - Detail about the image.
+ * @param {Object} params.user - User information.
+ * @param {Object} params.thread - Thread information.
+ * @param {Object} res - Response object.
+ * @returns {Promise<void>} - Returns a Promise that resolves when the function is completed.
+ */
 
+const chatAgent = async ({ instructions, input, user, thread }, res) => {
 
-const chatAgent = async ({ instructions, input, user, thread, content }, res) => {
+  // 1. Extract Modules, Resources, Utils, and Dependencies
+  const { __tags__, __requestId__, __executionId__, modules, resources, utils, env, models } = chatAgent;
 
-  // Extract Resources
-  const { __tags__, __executionId__, modules, resources, utils } = chatAgent;
-
-  // Extract Utils
+  // 1.1 Extract Utils
   const { createPrompt } = utils;
 
-  // Extract Dependencies
-  const { models, ai, callback } = modules;
+  // 1.2 Extract Dependencies
+  const { ai } = modules;
 
-  // Extract Resources
+  // 1.3 Extract Resources
   const { copilotz, config } = resources;
 
-  // Extract params
-  // 1. Get Thread and Turn Ids;
+  // 2. Extract params
+  // 2.1 Get Thread and Turn Ids;
   if (__tags__ && !__tags__?.turnId) __tags__.turnId = __executionId__;
   const { extId: threadId } = thread;
 
-  // 2. Get Input
-  if (!input) {
-    const { text, audio } = content;
-    const inputArr = [text];
-
-    // 2.1. Transcribe Audio input to text
-    if (audio) {
-      const textFromAudio = await ai["speech-to-text"]?.({
-        blob: audio,
-      });
-      inputArr.push(textFromAudio);
+  // 3. Get Chat Logs
+  const chatLogs = [];
+  // 3.1 Get Last Chat Log
+  const lastLog = await models.logs.findOne({
+    name: "chatAgent", "input.0.copilotzId": copilotz._id, "input.0.extId": threadId,
+  }, { sort: { createdAt: -1 } });
+  // 3.2. If Last Log Exists, Add to Chat Logs
+  if (lastLog) {
+    // 3.2.1 If first message in previous message's prompt history is System Message
+    if (lastLog?.output?.prompt?.[0]?.role === 'system') {
+      // 3.2.1.1 Remove system message 
+      const _messages = lastLog?.output?.prompt.slice(1);
+      // 3.2.1.2 Add previous message's prompt history to current chatLogs
+      chatLogs.push(..._messages);
+    } else {
+      // 3.2.2.1 Add previous message's prompt history to current chatLogs
+      chatLogs.push(...lastLog?.output?.prompt);
     }
-    input = inputArr.filter(Boolean).join("/n");
+    // 3.2.2 Add Last Message's Answer to current chatLogs
+    chatLogs.push({ role: 'assistant', content: lastLog?.output?.answer });
   }
 
+  // 4. Add User Input to Chat Logs
   const message = input && {
     role: "user",
     content: input,
   }
-
-  // // 3. Get Chat Logs
-  // const logs = await models.log.find({ tags: { threadId: threadId }, executionId: __tags__?.turnId });
-  const chatLogs = [];
-  const logs = await models.logs.find({
-    name: "chaAgent", input: {
-      $in: '$thread: { extId: threadId } } } });
-  // if (logs.length) {
-  //   const mainInstance = logs.find(log => log?.executionId === __tags__?.turnId)?.instance
-  //   const historyLogs = await models.log.find({ _unsafe: { hidden: { $ne: true } }, tags: { threadId: threadId }, instance: { _id: mainInstance._id } }, { sort: { createdAt: 1 } });
-  //   historyLogs?.forEach(log => {
-  //     log?.output?.message && chatLogs.push(log?.output?.message);
-  //     log?.output?.answer && !log?.output?.answer?.error && chatLogs.push({ role: 'assistant', content: typeof log?.output?.answer === 'string' ? log?.output?.answer : JSON.stringify(log?.output?.answer) });
-  //     log?.output?.answer?.error && chatLogs.push({
-  //       role: "assistant", content: JSON.stringify({ ...log?.output?.answer, reason: 'Oops. I made a mistake in my previous message as shown in the "error" property.  I\'ll fix it next.', })
-  //     });
-  //   });
-  // }
-
+  // 4.1. If User Input Exists, Add to Chat Logs
   message && chatLogs.push(message);
 
-    // 2. Ececute Commands
-    // const commandsList = {
-    //   '#limparconversa': async (payload) => {
-    //     await chatLogs.reject();
-    //     return
-    //   },
-    // };
-    // const commands = [];
-    // const matches = textMessage.match(/\#[^\s:]*(?:\:[^,\s]*(?:,\s*[^,\s]*)*)?/g)
-    // const executions = [];
-    // if (matches) {
-    //   matches.forEach(command => {
-    //     let [action, params] = command.split(':');
-    //     params = params ? params.split(',') : [];
-    //     commands.push({ action, params });
-    //   })
-    //   commands.forEach(({ action, params }) => {
-    //     const command = commandsList[action];
-    //     if (command) {
-    //       const execution = command({ params });
-    //       executions.push(execution);
-    //     }
-    //   })
-    //   if (executions.length > 0) {
-    //     await Promise.all(executions)
-    //     return callback({
-    //       user,
-    //       thread,
-    //       message: 'OK',
-    //       cost: 0,
-    //     })
-    //   }
-    // }
 
-    const promptVariables = {
-      copilotPrompt: createPrompt(
-        copilotPromptTemplate,
-        {
-          name: copilotz.name,
-          backstory: copilotz.backstory,
-          job: copilotz.job
-        }
-      ),
-      instructions,
-      currentDatePrompt: createPrompt(currentDatePromptTemplate, { currentDate: new Date() })
-    }
+  // 5. Create Prompt
+  //5.1 Create Prompt Variables
+  const promptVariables = {
+    copilotPrompt: createPrompt(
+      copilotPromptTemplate,
+      {
+        name: copilotz.name,
+        backstory: copilotz.backstory,
+        job: copilotz.job
+      }
+    ),
+    instructions,
+    currentDatePrompt: createPrompt(currentDatePromptTemplate, { currentDate: new Date() })
+  }
 
+  // 5.2 Create Prompt Instructions
   instructions = createPrompt(promptTemplate, promptVariables)
 
-  const { provider, ...options } = config.AI_CHAT_PROVIDER;
-    const aiChat = ai.chat[provider || 'openai'];
+  // 6. Get AI Chat
+  const { provider, ...options } = config?.AI_CHAT_PROVIDER || { provider: 'openai' }; // use openai as default provider
+  const aiChat = ai.chat[provider];
 
-    Object.assign(aiChat, {
-      config: {
-        ...options,
-        apiKey: config?.[`${provider}_CREDENTIALS`]?.apiKey
-      }
-    });
+  // 7. Execute AI Chat
+  // 7.1. Assign configuration to AI Chat
+  Object.assign(aiChat, {
+    __requestId__,
+    config: {
+      ...options,
+      apiKey: (
+        config?.[`${provider}_CREDENTIALS`]?.apiKey || // check for custom credentials in config
+        env?.[`${provider}_CREDENTIALS_apiKey`] //use default credentials from env
+      )
+    }
+  });
 
-    const { prompt, answer, tokens } = await aiChat(
-      { instructions, messages: chatLogs }, res.stream,
-    );
+  // 7.2. Execute AI Chat
+  const { prompt, answer, tokens } = await aiChat(
+    { instructions, messages: chatLogs },
+    res.stream,
+  );
 
-    console.log({ prompt, answer, tokens })
-
-  // callback && callback({ user, thread, message: answer }, res);
-
+  // 8. Return Response
   return {
-      message,
-      prompt,
-      answer,
-      consumption: {
-        type: 'tokens',
-        value: tokens
-      }
-    };
+    message,
+    prompt,
+    answer,
+    consumption: {
+      type: 'tokens',
+      value: tokens
+    }
   };
+};
 
-  export default chatAgent;
+export default chatAgent;
 
 
-
-  const promptTemplate = `
+const promptTemplate = `
 {{copilotPrompt}}
 ================
 {{instructions}}
@@ -150,7 +130,7 @@ const chatAgent = async ({ instructions, input, user, thread, content }, res) =>
 `;
 
 
-  const copilotPromptTemplate = `
+const copilotPromptTemplate = `
 ## YOUR IDENTITY
 Your name is {{name}}. Here's your backstory:
 <backstory>
@@ -159,10 +139,45 @@ Your name is {{name}}. Here's your backstory:
 </backstory>
 `;
 
-  const currentDatePromptTemplate = `
+const currentDatePromptTemplate = `
 Current Date Time:
 <currentDate>
 {{currentDate}}
 </currentDate>
 `;
 
+// TO DO: ADD HABILITY TO HANDLE COMMANDS
+
+// 2. Ececute Commands
+// const commandsList = {
+//   '#limparconversa': async (payload) => {
+//     await chatLogs.reject();
+//     return
+//   },
+// };
+// const commands = [];
+// const matches = textMessage.match(/\#[^\s:]*(?:\:[^,\s]*(?:,\s*[^,\s]*)*)?/g)
+// const executions = [];
+// if (matches) {
+//   matches.forEach(command => {
+//     let [action, params] = command.split(':');
+//     params = params ? params.split(',') : [];
+//     commands.push({ action, params });
+//   })
+//   commands.forEach(({ action, params }) => {
+//     const command = commandsList[action];
+//     if (command) {
+//       const execution = command({ params });
+//       executions.push(execution);
+//     }
+//   })
+//   if (executions.length > 0) {
+//     await Promise.all(executions)
+//     return callback({
+//       user,
+//       thread,
+//       message: 'OK',
+//       cost: 0,
+//     })
+//   }
+// }
