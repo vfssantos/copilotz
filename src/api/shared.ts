@@ -1,5 +1,6 @@
 import * as agents from './agents/main.js';
 import * as ai from './ai/main.js';
+import * as actions from './actions/main.js';
 
 export default (shared: any) => {
   return {
@@ -7,6 +8,7 @@ export default (shared: any) => {
     modules: {
       agents,
       ai,
+      actions,
     }
   }
 }

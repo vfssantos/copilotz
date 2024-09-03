@@ -4,7 +4,7 @@ import job from './job/main.js';
 import logs from './logs/main.js';
 import mappings from './mappings/main.js';
 import steps from './steps/main.js';
-// import tools from './tools/main.js';
+import tools from './tools/main.js';
 import workflows from './workflows/main.js';
 
 export default {
@@ -14,6 +14,6 @@ export default {
     logs,
     mappings,
     steps,
-    // tools,
+    tools,
     workflows,
 }

@@ -38,6 +38,14 @@ const middlewares: any = async (req: any) => {
             return obj;
         }, {});
 
+        // Get Copilotz Tools
+        if (copilotzDoc?.tools?.length) {
+            const toolsArr = await Promise.all(
+                copilotzDoc.tools.map((toolId: number) => models.tools.findOne({ _id: toolId }))
+            );
+            copilotzDoc.tools = toolsArr;
+        }
+
         // Add the Copilotz to the resources object
         middlewares.resources = {
             copilotz: copilotzDoc,

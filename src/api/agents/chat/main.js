@@ -22,6 +22,8 @@
  * @returns {Promise<void>} - Returns a Promise that resolves when the function is completed.
  */
 
+const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
 const chatAgent = async ({ instructions, input, user, thread, options }, res) => {
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
@@ -45,23 +47,48 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   const chatLogs = [];
   // 3.1 Get Last Chat Log
   const lastLog = await models.logs.findOne({
-    name: "chatAgent", "input.0.copilotzId": copilotz._id, "input.0.extId": threadId,
+    name: "chatAgent", "input.0.thread.extId": threadId
   }, { sort: { createdAt: -1 } });
+
   // 3.2. If Last Log Exists, Add to Chat Logs
   if (lastLog) {
+    let c = 0;
+    while (true) {
+      if (lastLog.input && !lastLog.output && lastLog.status !== 'failed' && c < 10) {
+        sleep(1000)
+      } else {
+        break;
+      }
+      c++;
+    }
     // 3.2.1 If first message in previous message's prompt history is System Message
     if (lastLog?.output?.prompt?.[0]?.role === 'system') {
       // 3.2.1.1 Remove system message 
-      const _messages = lastLog?.output?.prompt.slice(1);
+      const _messages = Array.isArray(lastLog?.output?.prompt) ? lastLog?.output?.prompt.slice(1) : [];
       // 3.2.1.2 Add previous message's prompt history to current chatLogs
       chatLogs.push(..._messages);
     } else {
       // 3.2.2.1 Add previous message's prompt history to current chatLogs
-      chatLogs.push(...lastLog?.output?.prompt);
+      lastLog?.output?.prompt && chatLogs.push(...lastLog?.output?.prompt);
     }
     // 3.2.2 Add Last Message's Answer to current chatLogs
-    chatLogs.push({ role: 'assistant', content: lastLog?.output?.answer });
+    lastLog?.output?.answer && chatLogs.push({ role: 'assistant', content: lastLog?.output?.answer });
   }
+
+  //let's make sure that  content is a string
+  chatLogs.map(log => {
+    if (typeof log.content !== 'string' && !Array.isArray(log.content)) {
+      log.content = JSON.stringify(log.content)
+    } else if (Array.isArray(log.content)) {
+      log.content = log.content.map(item => {
+        if (item.type === 'text') {
+          return { ...item, content: JSON.stringify(item.content) }
+        }
+        return item
+      })
+    }
+    return log
+  })
 
   // 4. Add User Input to Chat Logs
   const message = input && {
@@ -70,7 +97,6 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   }
   // 4.1. If User Input Exists, Add to Chat Logs
   message && chatLogs.push(message);
-
 
   // 5. Create Prompt
   //5.1 Create Prompt Variables
@@ -91,7 +117,7 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   instructions = createPrompt(promptTemplate, promptVariables)
 
   // 6. Get AI Chat
-  const { provider, ...options } = config?.AI_CHAT_PROVIDER || { provider: 'openai' }; // use openai as default provider
+  const { provider, ...providerOptions } = config?.AI_CHAT_PROVIDER || { provider: 'openai' }; // use openai as default provider
   const aiChat = ai.chat[provider];
 
   // 7. Execute AI Chat
@@ -99,7 +125,7 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   Object.assign(aiChat, {
     __requestId__,
     config: {
-      ...options,
+      ...providerOptions,
       apiKey: (
         config?.[`${provider}_CREDENTIALS`]?.apiKey || // check for custom credentials in config
         env?.[`${provider}_CREDENTIALS_apiKey`] //use default credentials from env
@@ -110,7 +136,7 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   // 7.2. Execute AI Chat
   const { prompt, answer, tokens } = await aiChat(
     { instructions, messages: chatLogs },
-    options.stream ? res.stream : (() => { })
+    options?.streamResponse ? res.stream : (() => { })
   );
 
   // 8. Return Response

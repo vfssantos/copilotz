@@ -13,7 +13,7 @@ export default ({ env, ...modules }: Record<string, any>) => {
                 syncUrl: env.DB_PATH,
                 syncPeriod: 10
             },
-            debug: true,
+            debug: false,
             serializer: 'stringifyArrays',
             addTimestamps: true
         }
