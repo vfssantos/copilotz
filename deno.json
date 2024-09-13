@@ -1,8 +1,8 @@
 {
     "tasks": {
-        "start": "DENO_DIR=./data/local/cache/.deno ENV=production deno run -A --importmap=deno.json --reload=http://localhost --no-lock --unstable-sloppy-imports  --no-prompt --unstable https://raw.githubusercontent.com/AxionCompany/functions/develop/main.ts",
-        "dev": "DENO_DIR=./data/local/cache/.deno ENV=development WATCH=true deno run --importmap=deno.json --reload=http://localhost,https://raw.githubusercontent.com/AxionCompany/functions/develop -A --no-lock --unstable-sloppy-imports  --no-prompt --unstable https://raw.githubusercontent.com/AxionCompany/functions/develop/main.ts",
-        "dev:local": "DENO_DIR=./data/local/cache/.deno ENV=development WATCH=true deno run --importmap=deno.json --reload=http://localhost  -A --no-lock --unstable-sloppy-imports  --no-prompt --unstable http://localhost:9000"
+        "start": "DENO_DIR=./data/local/cache/.deno ENV=production deno run -A --importmap=deno.json --reload=http://http://local@localhost:8000 --no-lock --unstable-sloppy-imports  --no-prompt --unstable https://raw.githubusercontent.com/AxionCompany/functions/develop/main.ts",
+        "dev": "DENO_DIR=./data/local/cache/.deno ENV=development WATCH=true deno run --importmap=deno.json --reload=http://local@localhost:8000,https://raw.githubusercontent.com/AxionCompany/functions/release -A --no-lock --unstable-sloppy-imports  --no-prompt --unstable https://raw.githubusercontent.com/AxionCompany/functions/release/main.ts",
+        "dev:local": "DENO_DIR=./data/local/cache/.deno ENV=development WATCH=true deno run --importmap=deno.json --reload=http://local@localhost:9000  -A --no-lock --unstable-sloppy-imports  --no-prompt --unstable http://localhost:9000"
     },
     "imports": {
         "axion-components/": "http://AxionCompany--axions-web--main:{{GIT_API_KEY}}@localhost:9000/src/components/",

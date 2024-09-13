@@ -22,9 +22,9 @@
  * @returns {Promise<void>} - Returns a Promise that resolves when the function is completed.
  */
 
-const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const chatAgent = async ({ instructions, input, user, thread, options }, res) => {
+const chatAgent = async ({ instructions, input, audio, user, thread, threadLogs, options }, res) => {
+  console.log(`[chatAgent] Starting chat agent`);
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
   const { __tags__, __requestId__, __executionId__, modules, resources, utils, env, models } = chatAgent;
@@ -33,7 +33,7 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   const { createPrompt } = utils;
 
   // 1.2 Extract Dependencies
-  const { ai } = modules;
+  const { ai, agents } = modules;
 
   // 1.3 Extract Resources
   const { copilotz, config } = resources;
@@ -43,52 +43,9 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   if (__tags__ && !__tags__?.turnId) __tags__.turnId = __executionId__;
   const { extId: threadId } = thread;
 
-  // 3. Get Chat Logs
-  const chatLogs = [];
-  // 3.1 Get Last Chat Log
-  const lastLog = await models.logs.findOne({
-    name: "chatAgent", "input.0.thread.extId": threadId
-  }, { sort: { createdAt: -1 } });
-
-  // 3.2. If Last Log Exists, Add to Chat Logs
-  if (lastLog) {
-    let c = 0;
-    while (true) {
-      if (lastLog.input && !lastLog.output && lastLog.status !== 'failed' && c < 10) {
-        sleep(1000)
-      } else {
-        break;
-      }
-      c++;
-    }
-    // 3.2.1 If first message in previous message's prompt history is System Message
-    if (lastLog?.output?.prompt?.[0]?.role === 'system') {
-      // 3.2.1.1 Remove system message 
-      const _messages = Array.isArray(lastLog?.output?.prompt) ? lastLog?.output?.prompt.slice(1) : [];
-      // 3.2.1.2 Add previous message's prompt history to current chatLogs
-      chatLogs.push(..._messages);
-    } else {
-      // 3.2.2.1 Add previous message's prompt history to current chatLogs
-      lastLog?.output?.prompt && chatLogs.push(...lastLog?.output?.prompt);
-    }
-    // 3.2.2 Add Last Message's Answer to current chatLogs
-    lastLog?.output?.answer && chatLogs.push({ role: 'assistant', content: lastLog?.output?.answer });
-  }
-
-  //let's make sure that  content is a string
-  chatLogs.map(log => {
-    if (typeof log.content !== 'string' && !Array.isArray(log.content)) {
-      log.content = JSON.stringify(log.content)
-    } else if (Array.isArray(log.content)) {
-      log.content = log.content.map(item => {
-        if (item.type === 'text') {
-          return { ...item, content: JSON.stringify(item.content) }
-        }
-        return item
-      })
-    }
-    return log
-  })
+  // 3. Get Thread Logs
+  console.log(`[chatAgent] Fetching thread history for threadId: ${threadId}`);
+  threadLogs = threadLogs || await getThreadHistory(threadId, { functionName: 'chatAgent', maxRetries: 10 });
 
   // 4. Add User Input to Chat Logs
   const message = input && {
@@ -96,17 +53,40 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
     content: input,
   }
   // 4.1. If User Input Exists, Add to Chat Logs
-  message && chatLogs.push(message);
+  if (message) {
+    console.log(`[chatAgent] Adding user input to chat logs`);
+    threadLogs.push(message);
+  }
+
+  // 4.2. If Audio Exists, Transcribe to Text and Add to Chat Logs
+  if (audio) {
+    console.log(`[chatAgent] Audio input detected, starting transcription`);
+    const transcriber = agents.transcriber;
+    Object.assign(transcriber, chatAgent);
+    const transcribedText = await transcriber({
+      audio,
+      instructions,
+    });
+    const transcribedMessage = {
+      role: "user",
+      content: transcribedText,
+    };
+    console.log(`[chatAgent] Audio transcribed and added to chat logs`);
+    threadLogs.push(transcribedMessage);
+  }
 
   // 5. Create Prompt
-  //5.1 Create Prompt Variables
+  console.log(`[chatAgent] Creating prompt`);
+  // 5.1 Create Prompt Variables
   const promptVariables = {
     copilotPrompt: createPrompt(
       copilotPromptTemplate,
       {
         name: copilotz.name,
         backstory: copilotz.backstory,
-        job: copilotz.job
+        jobRole: copilotz.job.role,
+        jobGoal: copilotz.job.goal,
+        jobDescription: copilotz.job.description
       }
     ),
     instructions,
@@ -134,12 +114,15 @@ const chatAgent = async ({ instructions, input, user, thread, options }, res) =>
   });
 
   // 7.2. Execute AI Chat
+  console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
   const { prompt, answer, tokens } = await aiChat(
-    { instructions, messages: chatLogs },
+    { instructions, messages: threadLogs },
     options?.streamResponse ? res.stream : (() => { })
   );
+  console.log(`[chatAgent] AI chat execution completed`);
 
   // 8. Return Response
+  console.log(`[chatAgent] Returning response`);
   return {
     message,
     prompt,
@@ -168,8 +151,15 @@ const copilotPromptTemplate = `
 Your name is {{name}}. Here's your backstory:
 <backstory>
 {{backstory}}
-{{job}}
 </backstory>
+
+Here's your job details:
+<job>
+Your role is: {{jobRole}}
+Your Job goal is: {{jobGoal}}
+Here's your job description:
+{{jobDescription}}
+</job>
 `;
 
 const currentDatePromptTemplate = `
@@ -214,3 +204,4 @@ Current Date Time:
 //     })
 //   }
 // }
+

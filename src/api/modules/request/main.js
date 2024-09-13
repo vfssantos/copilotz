@@ -1,4 +1,6 @@
 const request = async (url, { method, headers = {}, body, queryParams = {}, pathParams = {} } = {}) => {
+
+
     // Substitute pathParams in URL
     Object.keys(pathParams).forEach(key => {
         url = url.replace(`:${key}`, pathParams[key]);
@@ -36,7 +38,13 @@ const request = async (url, { method, headers = {}, body, queryParams = {}, path
         return res;
 
     } catch (error) {
-        console.error('Erro na requisição:', error);
+        console.error('Error processing request:', error, {
+            url,
+            method,
+            body,
+            queryParams,
+            pathParams,
+        });
         throw error;
     }
 };

@@ -3,10 +3,11 @@ const openAiSpeechToText = async ({ blob } = {}) => {
   if (!blob) return
   // Prepare FormData with audio content
   blob = await blob;
+  console.log('blob', blob)
   const formData = new FormData();
   formData.append("file", blob);
-  formData.append("model", config.model);
-  formData.append("language", config.language);
+  formData.append("model", config.model || 'whisper-1');
+  formData.append("language", config.language || 'pt');
   formData.append("response_format", 'verbose_json')
 
   // Call Whisper API

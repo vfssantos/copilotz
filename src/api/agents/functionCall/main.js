@@ -1,68 +1,80 @@
 import { jsonrepair } from "npm:jsonrepair";
-import validate, { expandAndMergeDotNotation } from "axion-modules/connectors/validator.ts";
+import validate, { getDotNotationObject } from "axion-modules/connectors/validator.ts";
 
-export default async function functionCall({ outputSchema, inputSchema, overrideBaseInputSchema, overrideBaseOutputSchema, instructions, input, output, user, thread, options }, res) {
+// Define Configs
+const maxIter = 5;
+
+const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSchema, overrideBaseInputSchema, overrideBaseOutputSchema, instructions, input, audio, output, user, thread, options, iterations = 0 }, res) => {
+  console.log(`[functionCall] Starting iteration ${iterations}`);
+
+  let actions = {};
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
   const { modules, resources, utils } = functionCall;
 
   // 1.1 Extract Utils
-  const { createPrompt, _ } = utils;
+  const { createPrompt, _, getThreadHistory } = utils;
 
   // 1.2 Extract Resources
-  const { copilotz } = resources;
+  const { copilotz, config } = resources;
 
+  // 1.3 Override Base Schemas
   const baseInputSchema = overrideBaseInputSchema || _baseInputSchema;
   const baseOutputSchema = overrideBaseOutputSchema || _baseOutputSchema;
 
-  // 1.3. Extract and Merge Schemas
+  // 1.4. Extract and Merge Schemas
   inputSchema = inputSchema ? mergeSchemas(overrideBaseInputSchema, inputSchema) : baseInputSchema;
   outputSchema = outputSchema ? mergeSchemas(overrideBaseOutputSchema, outputSchema) : baseOutputSchema;
-  // 2. Define Function Call Methods and Specs
-  let actions = {};
-  if (copilotz?.tools.length) {
 
-    const actionsArray = await Promise.all(copilotz.tools.map(async tool => {
+  // 2. Define Function Call Methods and Specs
+  if (copilotz?.actions.filter(_item => _item !== null && _item !== undefined).length) {
+    console.log(`[functionCall] Processing ${copilotz.actions.length} actions`);
+    // 2.1. For each action available:
+    const actionsArray = await Promise.all(copilotz.actions.map(async _action => {
+      console.log(`[functionCall] Processing action: ${_action.specType}`);
       const [specParser, actionModule] = await Promise.all([
-        // 1. Get action spec parser
-        import(new URL(`../../actions/specParser/${tool.specType}`, import.meta.url)).then((module) => module.default),
-        // 2. Get action module
-        tool.moduleUrl?.startsWith('http')
-          ? import(tool.moduleUrl).then((module) => module.default)
-          : tool.moduleUrl?.startsWith('native:')
-            ? import(new URL(`../../actions/modules/${tool.moduleUrl.slice(7)}`, import.meta.url)).then((module) => module.default)
-            : { error: true, status: 400, message: `Invalid Module URL: namespace for ${tool.moduleUrl} not found. Should either start with 'http:', 'https:', or 'native:'.` }
+        // 2.1. Get action spec parser
+        import(new URL(`../../_specParser/${_action.specType}`, import.meta.url)).then((module) => module.default),
+        // 2.2. Get action module
+        _action.moduleUrl?.startsWith('http')
+          ? import(_action.moduleUrl).then((module) => module.default)
+          : _action.moduleUrl?.startsWith('native:')
+            ? import(new URL(`../../modules/${_action.moduleUrl.slice(7)}`, import.meta.url)).then((module) => module.default)
+            : { error: true, status: 400, message: `Invalid Module URL: namespace for ${_action.moduleUrl} not found. Should either start with 'http:', 'https:', or 'native:'.` }
       ]);
 
-      // 2. Check for errors
+      // 2.3. Check for errors
       if (actionModule.error) throw actionModule
 
-      // 3. Add current dependecies to actionModule and specParser
+      // 2.4. Add current dependecies to actionModule and specParser
       Object.assign(actionModule, functionCall)
       Object.assign(specParser, functionCall)
 
-      // 4. Parse spec
-      const action = specParser({ spec: tool.spec, module: actionModule });
+      // 2.5. Parse spec
+      const action = specParser({ spec: _action.spec, module: actionModule });
       return action
     }))
 
-    // 5. Reduce actionsArray to actionsObj
+    // 2.6. Reduce actionsArray to actionsObj
     const actionsObj = actionsArray.reduce((acc, obj) => {
       Object.assign(acc, obj)
       return acc
     }, {})
 
-    // 6. Expand and merge to dot notation;
-    actions = expandAndMergeDotNotation(actionsObj);
+    // 2.7. Expand and merge to dot notation;
+    actions = getDotNotationObject(actionsObj)
 
   }
+  Object.assign(actions, actionModules)
 
   // 3. Get Action Specs
-  const actionSpecs = Object.entries(actions).reduce((acc, [name, action]) => {
-    return { ...acc, [name]: action.spec }
-  }, {})
+  const actionSpecs = Object.entries(actions).map(([name, action]) => {
+    return `${name}${action.spec}`
+  }).join('\n');
 
+  console.log(`[functionCall] Generated ${Object.keys(actions).length} action specs`);
 
+  // 4. Create Prompt
   const functionsPrompt = createPrompt(promptTemplate, {
     responseFormatPrompt: createPrompt(responseFormatPromptTemplate({ outputSchema, inputSchema }), {}),
     functionCallsPrompt: createPrompt(functionCallsPromptTemplate, {
@@ -70,19 +82,29 @@ export default async function functionCall({ outputSchema, inputSchema, override
     }),
   });
 
+  // 5. Validate and Format Input
   const formatedInput = input ? JSON.stringify(validate(jsonSchemaToShortSchema(inputSchema), { "message": input })) : '';
 
+  // 6. Get Thread Logs
+  console.log(`[functionCall] Fetching thread history`);
+  threadLogs = threadLogs || await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 });
+
+  // 7. Call Agent
   let agentResponse = {};
   if (!output?.answer) {
+    console.log(`[functionCall] Calling chat agent`);
     const chatAgent = modules.agents.chat;
     Object.assign(chatAgent, functionCall);
-    agentResponse = await modules.agents.chat(
-      { output, user, thread, options, input: formatedInput, instructions: (instructions + functionsPrompt) },
+    agentResponse = await chatAgent(
+      { threadLogs, output, user, thread, options, input: formatedInput, audio, instructions: (functionsPrompt + instructions) },
       { ...res, stream: options?.streamResponse ? streamMiddleware(res.stream) : () => { } },
     );
+    console.log(`[functionCall] Chat agent response received`);
   }
 
+  // 8. Validate and Format Output
   if (output?.answer || agentResponse?.answer) {
+    console.log(`[functionCall] Validating and formatting output`);
     let answerJson = {};
     let unvalidatedAnswerJson;
     try {
@@ -104,9 +126,8 @@ export default async function functionCall({ outputSchema, inputSchema, override
 
     } catch (err) {
       let errorMessage;
-      answerJson.continueProcessing = false;
       answerJson.functions = [];
-      console.log("INVALID JSON, Trying again!", err);
+      console.log("[functionCall] INVALID JSON, Trying again!", err);
       if (typeof err === 'string') {
         errorMessage = err
       } else if (err.message) {
@@ -114,43 +135,80 @@ export default async function functionCall({ outputSchema, inputSchema, override
       } else {
         errorMessage = "INVALID JSON, Trying again!"
       }
-      throw ({ ...agentResponse, answer: { ...(unvalidatedAnswerJson || { answer }), error: { code: "INVALID_JSON", message: errorMessage } } })
+      throw ({ ...agentResponse, answer: { ...(unvalidatedAnswerJson || output?.answer), error: { code: "INVALID_JSON", message: errorMessage } } })
     }
 
+    // 9. Execute Functions
+    console.log('[functionCall] Available actions:', Object.keys(actions));
     if (answerJson?.functions) {
-      answerJson?.functions?.forEach((func, index) => {
+      console.log(`[functionCall] Executing ${answerJson.functions.length} functions`);
+      answerJson.functions = await Promise.all(answerJson.functions.map(async (func) => {
         func.startTime = new Date().getTime();
-        if (!func.name) {
-          return delete answerJson.functions[index];
-        }
-        const functionCall = _.get({ ...adapters, ...actions }, func.name);
-        if (!functionCall) {
-          console.log("Action Not Found", func.name);
-          func.results =
-            `Function ${func.name} not found. Please, check and try again`
-        } else {
-          func.results = functionCall({ ...func.args, _user: user });
-        }
-      });
+        if (!func.name) return null;
 
-      // resolve all promises in action.results
-      answerJson.functions = await Promise.all(
-        answerJson.functions.filter(Boolean).map(async (func) => {
-          if (func.results && func.results.then) {
-            func.results = await func.results;
-          }
-          if (!func.results) {
-            func.results = { message: "function call returned `undefined`" }
-          }
+        const action = _.get(actions, func.name);
+        if (!action) {
+          console.log(`[functionCall] Action not found: ${func.name}`);
+          func.status = 'failed';
+          func.results = `Function ${func.name} not found. Please, check and try again`;
           return func;
-        }),
-      );
+        }
+
+        func.status = 'pending';
+        try {
+          console.log(`[functionCall] Executing function: ${func.name}`);
+          const actionResult = await Promise.resolve(action({ ...func.args, _user: user }));
+          func.status = 'ok';
+          func.results = actionResult || { message: "function call returned `undefined`" };
+          console.log(`[functionCall] Function ${func.name} executed successfully`);
+        } catch (err) {
+          console.log('[functionCall] Error executing function', func.name, err);
+          func.status = 'failed';
+          func.results = { error: { code: "FUNCTION_ERROR", message: err.message } };
+        }
+
+        return func;
+      }));
+
+      // Remove null entries (functions without names)
+      answerJson.functions = answerJson.functions.filter(Boolean);
     }
 
     agentResponse.answer = answerJson;
-  };
+  }
+
+  // 10. If there are functions to be called, call the agent again
+  if (agentResponse.answer.functions.length && iterations < maxIter) {
+    if (!Object.keys(actionModules)
+      .some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))
+    ) {
+      console.log(`[functionCall] Recursively calling functionCall for next iteration`);
+      return functionCall({
+        input: '',
+        actionModules,
+        user,
+        thread,
+        threadLogs: [
+          ...agentResponse?.prompt?.slice(1),
+          {
+            role: 'assistant',
+            content: typeof agentResponse.answer !== 'string'
+              ? JSON.stringify(agentResponse.answer)
+              : agentResponse.answer
+          }
+        ],
+        options,
+        iterations: iterations + 1
+      }, res);
+    }
+  }
+
+  console.log(`[functionCall] Finished iteration ${iterations}`);
+  // 10. Return Response
   return agentResponse
 };
+
+export default functionCall;
 
 
 const promptTemplate = `
@@ -187,11 +245,8 @@ ${JSON.stringify(jsonSchemaToShortSchema(inputSchema, { detailed: true }))}
 </userMessage>
 
 Guidelines:
-- Use 'continueProcessing' to indicate if the assistant should continue actions without waiting for user input.
-- Set 'continueProcessing' to \`false\` when you need user interaction to proceed. Note that this property is required.
-- Look back in your previous message to see the results of your last function calls. Do not repeat the same function calls. I repeat, do not repeat the same function calls.
+- Look back in your previous message to see the results of your last function calls. 
 - If a function fails, diagnose if there's any error in the args you've passed. If so, retry. If not, provide a clear message to the user.
-- Accurately update each step's status and reflection.
 - Specify function names and arguments clearly.
 `;
 
@@ -280,6 +335,10 @@ const _baseOutputSchema = {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "type": "object",
   "properties": {
+    "message": {
+      "type": "string",
+      "description": "Message for the user"
+    },
     "functions": {
       "type": "array",
       "items": {
@@ -294,24 +353,20 @@ const _baseOutputSchema = {
             "description": "{...args,[arg_name]:arg_value}"
           },
           "results": {
-            "type": "null",
+            "type": "any",
             "description": "To be filled with function result"
-          }
+          },
+          "status": {
+            "type": "string",
+            "description": "Function status"
+          },
         },
-        "required": ["name", "args", "results"]
+        "required": ["name"]
       },
       "description": "List of functions"
     },
-    "message": {
-      "type": "string",
-      "description": "Message for the user"
-    },
-    "continueProcessing": {
-      "type": "boolean",
-      "description": "`false` implies waiting for user input and perform no further action in this run. `true` implies continue processing either for waiting action result or proceed with other steps in this run."
-    }
   },
-  "required": ["functions", "message", "continueProcessing"]
+  "required": ["functions", "message"]
 }
 
 const _baseInputSchema = {

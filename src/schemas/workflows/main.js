@@ -1,7 +1,8 @@
 export default {
+    "_id":"number",
     "name":"string",
     "description":"string",
     "instructions":"string",
-    "expectedOutput":"string",
     "steps":["number->steps"],
+    "firstStep":"number->steps"
 }

@@ -63,17 +63,15 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
       // Combine all the parts
       const spec = `(${summary}):${formattedArgs}->${responses["200"].description}`;
 
-      const request = ({ _user, ...params }) => (
+      actions[operationId] = ({ _user, ...params }) => request(
         new URL(path, baseUrl).href,
         {
           method,
           headers: request?.globals?.headers,
-          data: { ...validate(schema.body, { ...request?.globals?.body, ...params }), _user },
+          body: { ...validate(schema.body, { ...request?.globals?.body, ...params }), _user },
           query: validate(schema.query, { ...request?.globals?.query, ...params }),
         }
       );
-
-      actions[operationId] = request;
       actions[operationId].spec = spec;
     }
   }

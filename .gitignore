@@ -11,7 +11,7 @@ coverage
 dist
 
 # Deno logs
-logs
+logs/
 
 # .env file
 .env
@@ -21,7 +21,7 @@ data
 cache
 
 # Deno lock file
-lock.json
+deno-lock.json
 
 # Deno dependencies
 deps
@@ -34,3 +34,9 @@ test-migrations.js
 
 # passwords
 passwords.txt
+
+# Cursor rules
+.cursorrules
+
+# test-data
+test-data

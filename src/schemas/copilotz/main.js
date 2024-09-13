@@ -4,6 +4,6 @@ export default {
     "description": "string!",
     "backstory": "string!",
     "job": "number->jobs",
-    "tools": ["number->tools"],
-    "config": "number->configs",
+    "actions": ["number->actions"],
+    "config": "number->configs"
 }

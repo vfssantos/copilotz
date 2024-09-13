@@ -1,6 +1,10 @@
 export default {
-    "name":"string",
-    "description":"string",
-    "instructions":"string",
-    "expectedOutput":"string"    
+    "_id": "number",
+    "name": "string",
+    "description": "string",
+    "instructions": "string",
+    "submitWhen": "string",
+    "onSubmit": "number->actions",
+    "job": "number->jobs",
+    "next": "number->steps",
 }
