@@ -1,7 +1,6 @@
 // Convert base64 audio to Blob
 const base64ToBlob = (base64) => {
   if (typeof base64 !== 'string') {
-    console.error('[base64ToBlob] Input is not a string:', base64);
     throw new Error('Invalid base64 input: expected string');
   }
 
@@ -38,13 +37,7 @@ const transcriberAgent = async ({ instructions, audio }, res) => {
       console.error('[transcriberAgent] No audio input provided');
       throw new Error('No audio input provided');
     }
-
-    console.log(`[transcriberAgent] Audio input detected, starting transcription`);
-    console.log(`[transcriberAgent] Audio input type:`, typeof audio);
-    console.log(`[transcriberAgent] Audio input preview:`, audio.substring(0, 50) + '...');
-
   
-    console.log(`[transcriberAgent] Audio input detected, starting transcription`);
     const provider = config?.AI_CHAT_PROVIDER?.provider;
     const transcriber = ai['speechToText'][provider];
     Object.assign(transcriber, {
