@@ -124,6 +124,9 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
         { optional: false, path: '$' }
       );
 
+      console.log(`[functionCall] Sending message to user: ${answerJson.message}`);
+      config.streamResponseBy === 'turn' &&res.stream(answerJson);
+
     } catch (err) {
       let errorMessage;
       answerJson.functions = [];
@@ -205,7 +208,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
 
   console.log(`[functionCall] Finished iteration ${iterations}`);
   // 10. Return Response
-  return agentResponse
+  return agentResponse;
 };
 
 export default functionCall;

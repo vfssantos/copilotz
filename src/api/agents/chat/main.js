@@ -117,7 +117,7 @@ const chatAgent = async ({ instructions, input, audio, user, thread, threadLogs,
   console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
   const { prompt, answer, tokens } = await aiChat(
     { instructions, messages: threadLogs },
-    options?.streamResponse ? res.stream : (() => { })
+    config.streamResponseBy === 'token' ? res.stream : (() => { })
   );
   console.log(`[chatAgent] AI chat execution completed`);
 

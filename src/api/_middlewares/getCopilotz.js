@@ -1,12 +1,13 @@
 
 const getCopilotz = async (req) => {
 
-    const { extId, copilotzId, channel } = req.params;
+    const { config: _config } = req.params;
+    const { copilotzId, ...config } = _config;
     const { models } = getCopilotz;
 
     let copilotzDoc;
 
-    if (copilotzId || extId) {
+    if (copilotzId) {
 
         if (copilotzId) {
             // Firts, try to find the Copilotz by its id
@@ -14,17 +15,6 @@ const getCopilotz = async (req) => {
                 _id: copilotzId,
             });
         }
-        // If not found, try to find the Copilotz by its external id
-        else if (extId) {
-            const mapper = await models.mappings.findOne({
-                extId,
-                resource: 'copilotz',
-                type: channel,
-            }, { populate: ['copilotz'] });
-
-            copilotzDoc = mapper.copilotz
-        };
-
         // If no Copilotz found, return an error
         if (!copilotzDoc) {
             throw { status: 404, message: 'Copilotz not found' };
@@ -37,8 +27,11 @@ const getCopilotz = async (req) => {
         copilotzDoc.actions = actions;
 
         getCopilotz.resources.copilotz = copilotzDoc;
+        getCopilotz.resources.config = config;
 
         return req;
+    } else {
+        throw { status: 400, message: 'Copilotz not found' };
     }
 }
 

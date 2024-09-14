@@ -3,7 +3,6 @@ import configs from './configs/main.js';
 import copilotz from './copilotz/main.js';
 import jobs from './jobs/main.js';
 import logs from './logs/main.js';
-import mappings from './mappings/main.js';
 import steps from './steps/main.js';
 import subscriptions from './subscriptions/main.js';
 import tasks from './tasks/main.js';
@@ -16,7 +15,6 @@ export default {
     copilotz,
     jobs,
     logs,
-    mappings,
     steps,
     subscriptions,
     tasks,

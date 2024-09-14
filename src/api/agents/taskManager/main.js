@@ -163,7 +163,7 @@ const taskManager = async ({ threadLogs, instructions, input, audio, user, threa
     }
 
     console.log(`[taskManager] Finished iteration ${iterations}`);
-    return agentResponse
+    return agentResponse;
 }
 
 export default taskManager;
