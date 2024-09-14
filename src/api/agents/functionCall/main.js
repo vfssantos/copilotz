@@ -125,7 +125,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
       );
 
       console.log(`[functionCall] Sending message to user: ${answerJson.message}`, 'config', config.streamResponseBy);
-      config.streamResponseBy === 'turn' && res.stream(answerJson) && res.stream('\n');
+      config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(answerJson)}\n`);
 
     } catch (err) {
       let errorMessage;
