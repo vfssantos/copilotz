@@ -14,42 +14,48 @@ const base64ToBlob = (base64) => {
 
 
 const transcriberAgent = async ({ instructions, audio }, res) => {
+  try{
 
-  console.log(`[transcriberAgent] Starting transcriber agent`);
+    console.log(`[transcriberAgent] Starting transcriber agent`);
+  
+    const { modules, resources, env, __requestId__ } = transcriberAgent;
+  
+    const { ai } = modules;
+  
+    const { config } = resources;
+  
+    if (!audio) return;
+  
+    console.log(`[chatAgent] Audio input detected, starting transcription`);
+    const provider = config?.AI_CHAT_PROVIDER?.provider;
+    const transcriber = ai['speechToText'][provider];
+    Object.assign(transcriber, {
+      __requestId__,
+      config: {
+        apiKey: (
+          config?.[`${provider}_CREDENTIALS`]?.apiKey || // check for custom credentials in config
+          env?.[`${provider}_CREDENTIALS_apiKey`] //use default credentials from env
+        )
+      }
+    });
+  
+    const audioBlob = base64ToBlob(audio);
+  
+    const transcribedAudio = await transcriber({
+      blob: audioBlob,
+      instructions
+    });
+  
+    console.log(`[transcriberAgent] Transcribed audio with ${transcribedAudio.duration} hours`);
+  
+    const transcribedText = `Transcript:\n\n"""\n${transcribedAudio.text}\n"""\n\n`
+  
+    return transcribedText;
+  } catch(err){
+    console.log(`[transcriberAgent] Error transcribing audio: ${err.message}`);
+    throw {message: `Error transcribing audio: ${err.message}`, status: err.status || 500};
+  }
 
-  const { modules, resources, env, __requestId__ } = transcriberAgent;
-
-  const { ai } = modules;
-
-  const { config } = resources;
-
-  if (!audio) return;
-
-  console.log(`[chatAgent] Audio input detected, starting transcription`);
-  const provider = config?.AI_CHAT_PROVIDER?.provider;
-  const transcriber = ai['speechToText'][provider];
-  Object.assign(transcriber, {
-    __requestId__,
-    config: {
-      apiKey: (
-        config?.[`${provider}_CREDENTIALS`]?.apiKey || // check for custom credentials in config
-        env?.[`${provider}_CREDENTIALS_apiKey`] //use default credentials from env
-      )
-    }
-  });
-
-  const audioBlob = base64ToBlob(audio);
-
-  const transcribedAudio = await transcriber({
-    blob: audioBlob,
-    instructions
-  });
-
-  console.log(`[transcriberAgent] Transcribed audio with ${transcribedAudio.duration} hours`);
-
-  const transcribedText = `Transcript:\n\n"""\n${transcribedAudio.text}\n"""\n\n`
-
-  return transcribedText;
 
 }
 
