@@ -121,7 +121,11 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
       answerJson = validate(
         jsonSchemaToShortSchema(outputSchema),
         unvalidatedAnswerJson,
-        { optional: false, path: '$' }
+        {
+          optional: false,
+          path: '$',
+          rejectExtraProperties: false
+        }
       );
 
       console.log(`[functionCall] Sending message to user: ${answerJson.message}`, 'config', config.streamResponseBy);

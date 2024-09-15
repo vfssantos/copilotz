@@ -23,11 +23,11 @@
  */
 
 
-const chatAgent = async ({ instructions, input, audio, user, thread, threadLogs, options }, res) => {
+const chatAgent = async ({ answer, instructions, input, audio, user, thread, threadLogs, options }, res) => {
   console.log(`[chatAgent] Starting chat agent`);
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { __tags__, __requestId__, __executionId__, modules, resources, utils, env, models } = chatAgent;
+  const { __tags__, __requestId__, __executionId__, modules, resources, utils, env } = chatAgent;
 
   // 1.1 Extract Utils
   const { createPrompt } = utils;
@@ -113,13 +113,17 @@ const chatAgent = async ({ instructions, input, audio, user, thread, threadLogs,
     }
   });
 
-  // 7.2. Execute AI Chat
-  console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
-  const { prompt, answer, tokens } = await aiChat(
-    { instructions, messages: threadLogs },
-    config.streamResponseBy === 'token' ? res.stream : (() => { })
-  );
-  console.log(`[chatAgent] AI chat execution completed`);
+  if (!answer) {
+    // 7.2. Execute AI Chat
+    console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
+    const { prompt, answer, tokens } = await aiChat(
+      { instructions, messages: threadLogs },
+      config.streamResponseBy === 'token' ? res.stream : (() => { })
+    );
+    console.log(`[chatAgent] AI chat execution completed`);
+  } else {
+    console.log(`[chatAgent] Pre-provided answer detected, skipping AI chat`);
+  }
 
   // 8. Return Response
   console.log(`[chatAgent] Returning response`);

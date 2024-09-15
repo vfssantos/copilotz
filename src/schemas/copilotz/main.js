@@ -5,5 +5,5 @@ export default {
     "backstory": "string!",
     "job": "number->jobs",
     "actions": ["number->actions"],
-    "config": "number->configs"
+    "configs": ["number->configs"]
 }

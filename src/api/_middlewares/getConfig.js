@@ -5,7 +5,15 @@ const getConfig = async (req) => {
     const { copilotz, config } = resources;
 
     // Get the Copilotz's configuration
-    const configsArr = await models.configs.find({ owner: copilotz._id, type: 'copilotz' });
+    let configsArr = (await models.configs.find({ owner: copilotz._id, type: 'copilotz' })) || [];
+
+    // Join Copilotz's configuration with the config passed by params
+    configsArr = [...(copilotz.configs || []), ...(configsArr || [])]
+
+    // Remove duplicates
+    configsArr = configsArr.filter(
+        (c, index) => configsArr.findIndex((t) => t._id === c._id) === index
+    );
 
     // Convert the configuration array to an object
     const _config = configsArr.reduce((obj, c) => {
