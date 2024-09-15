@@ -194,12 +194,14 @@ PS.:
     - YOU MUST submit AS SOON AS the condition of \`submitWhen\` has been satisfied, NOT BEFORE AND NOR AFTER THAT.
     - When you submit, just let the user know in your message that you are updating the status, AND NOTHING MORE.
 
+## Workflow Steps
+Here are the steps in this workflow (in order): 
+<steps>
+{{steps}}
+</steps>
+
 An excellent response will provide a thoughtful answer, but also guide the conversation back towards completing your task.
 ================
 `;
 
-// ## Workflow Steps
-// Here are the steps in this workflow (in order): 
-// <steps>
-// {{steps}}
-// </steps>
+
