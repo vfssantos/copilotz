@@ -40,7 +40,7 @@ const taskManager = async ({ threadLogs, instructions, input, audio, user, threa
         }
     }
 
-    if (!taskDoc) {
+    if (!taskDoc && job && job.defaultWorkflow) {
         console.log(`[taskManager] Creating new task`);
         taskDoc = await actionModules.createTask()
         console.log(`[taskManager] New task created: ${taskDoc._id}`);

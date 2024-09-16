@@ -113,14 +113,18 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
     }
   });
 
+  let prompt, answer, tokens;
   if (!answer) {
     // 7.2. Execute AI Chat
     console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
-    const { prompt, answer, tokens } = await aiChat(
+    const aiChatResponse = await aiChat(
       { instructions, messages: threadLogs },
       config.streamResponseBy === 'token' ? res.stream : (() => { })
     );
     console.log(`[chatAgent] AI chat execution completed`);
+    prompt = aiChatResponse.prompt;
+    answer = aiChatResponse.answer;
+    tokens = aiChatResponse.tokens;
   } else {
     console.log(`[chatAgent] Pre-provided answer detected, skipping AI chat`);
   }
