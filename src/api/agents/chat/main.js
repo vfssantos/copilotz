@@ -113,7 +113,7 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
     }
   });
 
-  let prompt, answer, tokens;
+  let prompt, tokens;
   if (!answer) {
     // 7.2. Execute AI Chat
     console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
