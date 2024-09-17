@@ -131,6 +131,13 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
       console.log(`[functionCall] Sending message to user: ${answerJson.message}`, 'config', config.streamResponseBy);
       config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(answerJson)}\n`);
 
+      
+      if(answerJson.functions.some(func => func.name === 'callback')) {
+        const callbackIndex = answerJson.functions.findIndex(func => func.name === 'callback');
+        res.stream(`${JSON.stringify(answerJson.functions[callbackIndex]?.args)}\n`);
+        answerJson.functions.splice(callbackIndex, 1);
+      }
+
     } catch (err) {
       let errorMessage;
       answerJson.functions = [];
@@ -188,6 +195,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
   if (agentResponse.answer.functions.length && iterations < maxIter) {
     if (!Object.keys(actionModules)
       .some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))
+    || agentResponse.answer.hasFollowUp
     ) {
       console.log(`[functionCall] Recursively calling functionCall for next iteration`);
       return functionCall({
@@ -346,6 +354,10 @@ const _baseOutputSchema = {
       "type": "string",
       "description": "Message for the user"
     },
+    "hasFollowUp": {
+      "type": "boolean",
+      "description": "If true, the agent will continue the conversation in the next message"
+    },
     "functions": {
       "type": "array",
       "items": {
@@ -373,7 +385,7 @@ const _baseOutputSchema = {
       "description": "List of functions"
     },
   },
-  "required": ["functions", "message"]
+  "required": ["functions", "message", "hasFollowUp"]
 }
 
 const _baseInputSchema = {

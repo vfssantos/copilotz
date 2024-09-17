@@ -8,8 +8,6 @@ import {
 
 const middleware: any = async (req: any) => {
 
-    console.log('got to middlewares @ client', req)
-
     middleware.resources = middleware.resources || {};
 
     const middlewares = [
@@ -25,8 +23,6 @@ const middleware: any = async (req: any) => {
         await middlewareFn(req);
         Object.assign(middleware, middlewareFn);
     }
-
-    console.log('passed middleware', req);
 
     return req;
 
