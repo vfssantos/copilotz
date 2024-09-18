@@ -113,7 +113,6 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
     }
   });
 
-  console.log('[chatAnswer] Answer:', answer);
   // 7.2. Execute AI Chat
   console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
   const { prompt, tokens, answer: assistantAnswer } = await aiChat(

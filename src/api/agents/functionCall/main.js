@@ -106,11 +106,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
     let answerJson = {};
     let unvalidatedAnswerJson;
     try {
-      console.log('[functionCall] unvalidatedAnswerJson', agentResponse?.answer);
       unvalidatedAnswerJson = JSON.parse(jsonrepair(agentResponse?.answer || '{}'));
-
-      console.log('[functionCall] unvalidatedAnswerJson', unvalidatedAnswerJson);
-
       answerJson = validate(
         jsonSchemaToShortSchema(outputSchema),
         unvalidatedAnswerJson,
@@ -121,7 +117,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
         }
       );
 
-      console.log(`[functionCall] Sending message to user: ${answerJson.message}`, 'config', config.streamResponseBy);
+      console.log(`[functionCall] Sending message to user`);
       config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(answerJson)}\n`);
 
       if (answerJson.functions.some(func => func.name === 'callback')) {
