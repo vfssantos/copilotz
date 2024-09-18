@@ -27,7 +27,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
   outputSchema = outputSchema ? mergeSchemas(overrideBaseOutputSchema, outputSchema) : baseOutputSchema;
 
   // 2. Define Function Call Methods and Specs
-  if (copilotz?.actions.filter(_item => _item !== null && _item !== undefined).length) {
+  if (copilotz?.actions.filter(Boolean).length) {
     console.log(`[functionCall] Processing ${copilotz.actions.length} actions`);
     // 2.1. For each action available:
     const actionsArray = await Promise.all(copilotz.actions.map(async _action => {

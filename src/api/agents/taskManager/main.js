@@ -51,13 +51,19 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
         createTask: `(create new task):->'returns string 'task created'`
     }
 
+
     Object.keys(actionModules).forEach(actionName => actionModules[actionName].spec = actionSpecs[actionName])
+
 
     if (taskDoc) {
 
         console.log(`[taskManager] Fetching workflow and current step`);
         workflow = await models.workflows.findOne({ _id: taskDoc.workflow }, { populate: ['steps'] });
-        currentStep = await models.steps.findOne({ _id: taskDoc.currentStep }, { populate: ['job'] });
+        currentStep = await models.steps.findOne({ _id: taskDoc.currentStep });
+        if (currentStep?.job?._id && currentStep?.job?._id !== copilotz?.job?._id) {
+            const job = await models.jobs.findOne({ _id: currentStep.job }, { populate: ['actions'] });
+            copilotz.job = job;
+        }
 
         console.log(`[taskManager] Current step: ${currentStep.name}`);
 
@@ -68,12 +74,11 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
             submitWhen: submitWhen,
         } = currentStep;
 
-
         if (currentStep?.job?._id && currentStep?.job?._id !== copilotz.job?._id) {
             copilotz.job = currentStep.job;
         }
 
-        copilotz.actions = [...(copilotz.actions || []), ...(copilotz?.job?.actions || [])].filter(_action => _action !== undefined && _action !== null);
+        copilotz.actions = [...(copilotz.actions || []), ...(copilotz?.job?.actions || [])].filter(Boolean);
 
         // 3. Create Instructions
         const taskManagerPrompt = createPrompt(currentTaskPromptTemplate, {
