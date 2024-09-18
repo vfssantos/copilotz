@@ -59,7 +59,7 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
 
         console.log(`[taskManager] Fetching workflow and current step`);
         workflow = await models.workflows.findOne({ _id: taskDoc.workflow }, { populate: ['steps'] });
-        currentStep = await models.steps.findOne({ _id: taskDoc.currentStep });
+        currentStep = await models.steps.findOne({ _id: taskDoc.currentStep }, { populate: ['actions'] });
         if (currentStep?.job?._id && currentStep?.job?._id !== copilotz?.job?._id) {
             const job = await models.jobs.findOne({ _id: currentStep.job }, { populate: ['actions'] });
             copilotz.job = job;
@@ -78,7 +78,7 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
             copilotz.job = currentStep.job;
         }
 
-        copilotz.actions = [...(copilotz.actions || []), ...(copilotz?.job?.actions || [])].filter(Boolean);
+        copilotz.actions = [...(copilotz.actions || []), ...(copilotz?.job?.actions || []), ...(currentStep?.actions || [])].filter(Boolean);
 
         // 3. Create Instructions
         const taskManagerPrompt = createPrompt(currentTaskPromptTemplate, {
@@ -188,27 +188,24 @@ Here are the steps in this workflow (in order):
 <steps>
 {{steps}}
 </steps>
-PS.:
-    - DO NOT antecipate about the next step, just focus on completing the current one.
 
 ## Step Instructions
 Instructions for your current step: 
 <currentStep>
 {{stepName}}: {{stepInstructions}}
 </currentStep>
-PS.:
-    - DO NOT ask for information that are not defined in the instructions for the current step above! Follow the instructions carefully.
+- DO NOT ask for information that are not defined in the instructions for the current step above! Follow the instructions carefully.
+- DO NOT antecipate about the next step, just focus on completing the current one.
 
 ## Submit step completion
 Submit your the this step using the 'submit' function, when:
 <submitWhen>
 {{submitWhen}}
 </submitWhen>
-PS.: 
-    - YOU MUST submit AS SOON AS the condition of \`submitWhen\` has been satisfied, NOT BEFORE AND NOR AFTER THAT.
-    - When you submit, just let the user know in your message that you are updating the status, AND NOTHING MORE.
+- YOU MUST submit AS SOON AS the condition of \`submitWhen\` has been satisfied, NOT BEFORE AND NOR AFTER THAT.
+- When you submit, just let the user know in your message that you are updating the status, AND NOTHING MORE.
 
-An excellent response will provide a thoughtful answer, but also guide the conversation back towards completing your task.
+An excellent response will focus solely on the current step, ensuring that the required information is collected before proceeding.
 ================
 `;
 
