@@ -6,5 +6,6 @@ export default {
     "submitWhen": "string",
     "onSubmit": "number->actions",
     "job": "number->jobs",
+    "actions": ["number->actions"],
     "next": "number->steps",
 }
