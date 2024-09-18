@@ -1,8 +1,17 @@
 import formatChat, { tokenCounter } from '../helpers.js';
+
 const openAiChat = async (chat, stream = () => { }) => {
 
   const { config, env } = openAiChat;
   const messages = formatChat({ ...chat, config });
+
+  if (chat.answer) {
+    return {
+      prompt: messages,
+      answer: chat.answer,
+      tokens: 0
+    }
+  }
 
   // call the openai api
   const response = await fetch("https://api.openai.com/v1/chat/completions", {

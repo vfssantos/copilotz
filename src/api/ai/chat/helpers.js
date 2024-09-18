@@ -1,6 +1,6 @@
 import { getEncoding } from "npm:js-tiktoken";
 
-export default ({ instructions, messages, config }) => {
+export default ({ instructions, messages, answer, config }) => {
 
     // create a list of messages to send to the api
     messages = [ // add Assistant initial instructions if they exist
@@ -10,7 +10,8 @@ export default ({ instructions, messages, config }) => {
                 content: instructions,
             }]
             : []),
-        ...messages
+        ...messages,
+        ...(answer ? [{ role: "assistant", content: JSON.stringify(answer) }] : [])
     ];
 
     // limit the length of the messages to config.maxLength

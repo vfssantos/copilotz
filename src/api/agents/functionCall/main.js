@@ -4,7 +4,7 @@ import validate, { getDotNotationObject } from "axion-modules/connectors/validat
 // Define Configs
 const maxIter = 5;
 
-const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSchema, overrideBaseInputSchema, overrideBaseOutputSchema, instructions, input, audio, output, user, thread, options, iterations = 0 }, res) => {
+const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSchema, overrideBaseInputSchema, overrideBaseOutputSchema, instructions, input, audio, answer, user, thread, options, iterations = 0 }, res) => {
   console.log(`[functionCall] Starting iteration ${iterations}`);
 
   let actions = {};
@@ -91,29 +91,27 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
 
   // 7. Call Agent
   let agentResponse = {};
-  if (!output?.answer) {
-    console.log(`[functionCall] Calling chat agent`);
-    const chatAgent = modules.agents.chat;
-    Object.assign(chatAgent, functionCall);
-    agentResponse = await chatAgent(
-      { threadLogs, output, user, thread, options, input: formatedInput, audio, instructions: (functionsPrompt + instructions) },
-      { ...res, stream: options?.streamResponse ? streamMiddleware(res.stream) : () => { } },
-    );
-    console.log(`[functionCall] Chat agent response received`);
-  }
+  console.log(`[functionCall] Calling chat agent`);
+  const chatAgent = modules.agents.chat;
+  Object.assign(chatAgent, functionCall);
+  agentResponse = await chatAgent(
+    { threadLogs, answer, user, thread, options, input: formatedInput, audio, instructions: (functionsPrompt + instructions) },
+    { ...res, stream: options?.streamResponse ? streamMiddleware(res.stream) : () => { } },
+  );
+  console.log(`[functionCall] Chat agent response received`);
 
   // 8. Validate and Format Output
-  if (output?.answer || agentResponse?.answer) {
+  if (answer || agentResponse?.answer) {
     console.log(`[functionCall] Validating and formatting output`);
     let answerJson = {};
     let unvalidatedAnswerJson;
     try {
       unvalidatedAnswerJson = JSON.parse(jsonrepair(agentResponse?.answer || '{}'));
       unvalidatedAnswerJson = {
-        ...output?.answer,
+        ...answer,
         ...unvalidatedAnswerJson,
         functions: [
-          ...output?.answer?.functions ?? [],
+          ...answer?.functions ?? [],
           ...unvalidatedAnswerJson.functions ?? []
         ]
       };
@@ -131,10 +129,9 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
       console.log(`[functionCall] Sending message to user: ${answerJson.message}`, 'config', config.streamResponseBy);
       config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(answerJson)}\n`);
 
-      
-      if(answerJson.functions.some(func => func.name === 'callback')) {
+      if (answerJson.functions.some(func => func.name === 'callback')) {
         const callbackIndex = answerJson.functions.findIndex(func => func.name === 'callback');
-        res.stream(`${JSON.stringify(answerJson.functions[callbackIndex]?.args)}\n`);
+        res.stream(`${JSON.stringify(answerJson.functions[callbackIndex]?.args)}`);
         answerJson.functions.splice(callbackIndex, 1);
       }
 
@@ -195,7 +192,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
   if (agentResponse.answer.functions.length && iterations < maxIter) {
     if (!Object.keys(actionModules)
       .some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))
-    || agentResponse.answer.hasFollowUp
+      || agentResponse.answer.hasFollowUp
     ) {
       console.log(`[functionCall] Recursively calling functionCall for next iteration`);
       return functionCall({
