@@ -8,7 +8,7 @@ const openAiChat = async (chat, stream = () => { }) => {
   if (chat.answer) {
     return {
       prompt: messages,
-      answer: chat.answer,
+      answer: typeof chat.answer === "string" ? chat.answer : JSON.stringify(chat.answer),
       tokens: 0
     }
   }

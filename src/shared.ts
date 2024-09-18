@@ -23,8 +23,6 @@ export default ({ env, ...modules }: Record<string, any>) => {
     //     }
     // });
 
-    console.log('ENV FROM CLIENT IN SHARED', env);
-
     console.log('connecting to db in client');
     const remoteModels = crud({
         schemas,

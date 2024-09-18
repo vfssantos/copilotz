@@ -101,20 +101,15 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
   console.log(`[functionCall] Chat agent response received`);
 
   // 8. Validate and Format Output
-  if (answer || agentResponse?.answer) {
+  if (agentResponse?.answer) {
     console.log(`[functionCall] Validating and formatting output`);
     let answerJson = {};
     let unvalidatedAnswerJson;
     try {
+      console.log('[functionCall] unvalidatedAnswerJson', agentResponse?.answer);
       unvalidatedAnswerJson = JSON.parse(jsonrepair(agentResponse?.answer || '{}'));
-      unvalidatedAnswerJson = {
-        ...answer,
-        ...unvalidatedAnswerJson,
-        functions: [
-          ...answer?.functions ?? [],
-          ...unvalidatedAnswerJson.functions ?? []
-        ]
-      };
+
+      console.log('[functionCall] unvalidatedAnswerJson', unvalidatedAnswerJson);
 
       answerJson = validate(
         jsonSchemaToShortSchema(outputSchema),
@@ -146,7 +141,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
       } else {
         errorMessage = "INVALID JSON, Trying again!"
       }
-      throw ({ ...agentResponse, answer: { ...(unvalidatedAnswerJson || output?.answer), error: { code: "INVALID_JSON", message: errorMessage } } })
+      throw ({ ...agentResponse, answer: { ...(unvalidatedAnswerJson || answer), error: { code: "INVALID_JSON", message: errorMessage } } })
     }
 
     // 9. Execute Functions

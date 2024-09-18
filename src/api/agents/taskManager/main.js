@@ -1,5 +1,5 @@
 const maxIter = 3
-const taskManager = async ({ threadLogs, instructions, input, audio, user, thread, options, iterations = 0 }, res) => {
+const taskManager = async ({ answer, threadLogs, instructions, input, audio, user, thread, options, iterations = 0 }, res) => {
     console.log(`[taskManager] Starting iteration ${iterations}`);
 
     let currentStep;
@@ -102,6 +102,7 @@ const taskManager = async ({ threadLogs, instructions, input, audio, user, threa
         audio,
         user,
         thread,
+        answer,
         options,
         threadLogs: threadLogs
     }, res);
