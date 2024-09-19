@@ -31,7 +31,9 @@ const getThreadHistory = async (threadId, { functionName, maxRetries, toAppend }
 
   // 1.2. If Last Log Exists, Add to Chat Logs
   const lastLog = (await models.logs.find({
-    name: functionName, "input.0.thread.extId": threadId
+    "name": functionName,
+    "input.0.thread.extId": threadId,
+    "hidden": null
   }, { sort: { createdAt: -1 }, limit: 5 })).find(log => log.output?.answer);
 
   // 1.2.1 If first message in previous message's prompt history is System Message
