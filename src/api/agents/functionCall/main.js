@@ -183,7 +183,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
   if (agentResponse.answer.functions.length && iterations < maxIter) {
     if (!Object.keys(actionModules).some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))) {
       if (!agentResponse.answer.hasFollowUp || agentResponse.answer?.functions?.length) {
-        
+
         agentResponse.answer.hasFollowUp = false;
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
@@ -201,6 +201,7 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
                 : agentResponse.answer
             }
           ],
+          instructions,
           options,
           iterations: iterations + 1
         }, res);
