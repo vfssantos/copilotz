@@ -137,7 +137,6 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
 
     if (Object.keys(updateTaskPayload).length) {
         console.log(`[taskManager] Updating task: ${taskDoc._id}`);
-        console.log(`[taskManager] Update payload:`, JSON.stringify(updateTaskPayload, null, 2));
         try {
             await models.tasks.update({ _id: taskDoc._id }, updateTaskPayload);
             console.log(`[taskManager] Task updated successfully`);
@@ -148,7 +147,7 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
 
         if (updateTaskPayload.currentStep !== currentStep._id && iterations < maxIter) {
             console.log(`[taskManager] Recursively calling taskManager for next step`);
-            return taskManager({
+            return await taskManager({
                 input: '',
                 actionModules,
                 user,

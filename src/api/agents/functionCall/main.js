@@ -181,28 +181,30 @@ const functionCall = async ({ threadLogs, outputSchema, actionModules, inputSche
 
   // 10. If there are functions to be called, call the agent again
   if (agentResponse.answer.functions.length && iterations < maxIter) {
-    if (!Object.keys(actionModules)
-      .some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))
-      || agentResponse.answer.hasFollowUp
-    ) {
-      console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-      return functionCall({
-        input: '',
-        actionModules,
-        user,
-        thread,
-        threadLogs: [
-          ...agentResponse?.prompt?.slice(1),
-          {
-            role: 'assistant',
-            content: typeof agentResponse.answer !== 'string'
-              ? JSON.stringify(agentResponse.answer)
-              : agentResponse.answer
-          }
-        ],
-        options,
-        iterations: iterations + 1
-      }, res);
+    if (!Object.keys(actionModules).some(actionName => agentResponse.answer.functions.map(func => func.name).includes(actionName))) {
+      if (!agentResponse.answer.hasFollowUp || agentResponse.answer?.functions?.length) {
+        
+        agentResponse.answer.hasFollowUp = false;
+
+        console.log(`[functionCall] Recursively calling functionCall for next iteration`);
+        return await functionCall({
+          input: '',
+          actionModules,
+          user,
+          thread,
+          threadLogs: [
+            ...agentResponse?.prompt?.slice(1),
+            {
+              role: 'assistant',
+              content: typeof agentResponse.answer !== 'string'
+                ? JSON.stringify(agentResponse.answer)
+                : agentResponse.answer
+            }
+          ],
+          options,
+          iterations: iterations + 1
+        }, res);
+      }
     }
   }
 
@@ -344,7 +346,7 @@ const _baseOutputSchema = {
     },
     "hasFollowUp": {
       "type": "boolean",
-      "description": "If true, the agent will continue the conversation in the next message"
+      "description": "If true, the agent will wait for the message from the user before continuing the conversation"
     },
     "functions": {
       "type": "array",
