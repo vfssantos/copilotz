@@ -77,6 +77,8 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
 
   // 5. Create Prompt
   console.log(`[chatAgent] Creating prompt`);
+  console.log(`[chatAgent] Thread Logs: ${threadLogs}`);
+  console.log(`[chatAgent] JOB: ${JSON.stringify(copilotz.job)}`);
   // 5.1 Create Prompt Variables
   const promptVariables = {
     copilotPrompt: createPrompt(
@@ -84,9 +86,9 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
       {
         name: copilotz.name,
         backstory: copilotz.backstory,
-        jobRole: copilotz.job.role,
-        jobGoal: copilotz.job.goal,
-        jobDescription: copilotz.job.description
+        jobRole: copilotz.job?.role,
+        jobGoal: copilotz.job?.goal,
+        jobDescription: copilotz.job?.description
       }
     ),
     instructions,
