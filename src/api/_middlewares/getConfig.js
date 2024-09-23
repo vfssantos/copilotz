@@ -8,11 +8,13 @@ const getConfig = async (req) => {
     let configsArr = (await models.configs.find({ owner: copilotz._id, type: 'copilotz' })) || [];
 
     // Join Copilotz's configuration with the config passed by params
-    configsArr = [...(copilotz.configs || []), ...(configsArr || [])]
+    configsArr = [...(copilotz.configs || []), ...(configsArr || [])].filter(c=>c?._id)
+
+    console.log('CONFIGS ARRAY',configsArr);
 
     // Remove duplicates
     configsArr = configsArr.filter(
-        (c, index) => configsArr.findIndex((t) => t._id === c._id) === index
+        (c, index) => configsArr.findIndex((t) => t?._id === c?._id) === index
     );
 
     // Convert the configuration array to an object
