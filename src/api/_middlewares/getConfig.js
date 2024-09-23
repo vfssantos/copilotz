@@ -10,8 +10,6 @@ const getConfig = async (req) => {
     // Join Copilotz's configuration with the config passed by params
     configsArr = [...(copilotz.configs || []), ...(configsArr || [])].filter(c=>c?._id)
 
-    console.log('CONFIGS ARRAY',configsArr);
-
     // Remove duplicates
     configsArr = configsArr.filter(
         (c, index) => configsArr.findIndex((t) => t?._id === c?._id) === index
