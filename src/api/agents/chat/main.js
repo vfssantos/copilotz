@@ -110,7 +110,8 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
         config?.[`${provider}_CREDENTIALS`]?.apiKey || // check for custom credentials in config
         env?.[`${provider}_CREDENTIALS_apiKey`] //use default credentials from env
       )
-    }
+    }, 
+    env
   });
 
   // 7.2. Execute AI Chat
