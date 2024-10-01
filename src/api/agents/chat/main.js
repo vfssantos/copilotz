@@ -30,7 +30,7 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
   const { __tags__, __requestId__, __executionId__, modules, resources, utils, env } = chatAgent;
 
   // 1.1 Extract Utils
-  const { createPrompt } = utils;
+  const { createPrompt, getThreadHistory } = utils;
 
   // 1.2 Extract Dependencies
   const { ai, agents } = modules;
