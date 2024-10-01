@@ -19,7 +19,7 @@ const taskManager = async ({ answer, threadLogs, instructions, input, audio, use
     // 1. Get or Create Task
     // 1.1 Get active task by thread id;
     console.log(`[taskManager] Searching for active task with extId: ${externalId}`);
-    let taskDoc = await models.tasks.findOne({ extId: externalId, status: 'active' });
+    let taskDoc = await models.tasks.findOne({ extId: externalId, status: 'active' }, { sort: { 'updatedAt': -1 } });
     console.log(`[taskManager] Task found: ${taskDoc ? 'Yes' : 'No'}`);
 
     const actionModules = {
