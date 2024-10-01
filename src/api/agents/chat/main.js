@@ -102,7 +102,6 @@ const chatAgent = async ({ answer, instructions, input, audio, user, thread, thr
 
   // 7. Execute AI Chat
   // 7.1. Assign configuration to AI Chat
-  console.log('env debugging', env);
   Object.assign(aiChat, {
     __requestId__,
     config: {
