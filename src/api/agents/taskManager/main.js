@@ -311,7 +311,7 @@ const taskManager = async (
     };
 
     console.log(`[taskManager] Finished iteration ${iterations}`);
-    return (agentType === 'taskManager' && config?.streamResponseBy === 'turn') ? {} : response;
+    return response;
 };
 
 export default taskManager;
