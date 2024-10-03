@@ -40,7 +40,7 @@ const chatAgent = async (
     res
 ) => {
     agentType = agentType || 'chat';
-    
+
     console.log(`[chatAgent] Starting chat agent`);
 
     // 1. Extract Modules, Resources, Utils, and Dependencies
@@ -104,6 +104,7 @@ const chatAgent = async (
         const { message: transcribedText } = await transcriber({
             audio,
             instructions,
+            agentType,
         });
         const transcribedMessage = {
             role: 'user',

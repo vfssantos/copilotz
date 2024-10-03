@@ -144,6 +144,7 @@ const functionCall = async (
       options,
       input: formattedInput,
       audio,
+      agentType,
       instructions: functionsPrompt + instructions,
     },
     res
@@ -275,6 +276,7 @@ const functionCall = async (
             instructions,
             options,
             iterations: iterations + 1,
+            agentType,
           },
           res
         );
@@ -284,7 +286,7 @@ const functionCall = async (
 
   console.log(`[functionCall] Finished iteration ${iterations}`);
   // 11. Return Response
-  return (agentType === 'functionCall' && config?.streamResponseBy === 'turn') ? {} : functionAgentResponse;
+  return functionAgentResponse;
 };
 
 export default functionCall;

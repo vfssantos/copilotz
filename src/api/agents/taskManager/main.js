@@ -180,6 +180,7 @@ const taskManager = async (
             answer,
             options,
             threadLogs,
+            agentType
         },
         res
     );
@@ -291,6 +292,7 @@ const taskManager = async (
                         },
                     ],
                     options,
+                    agentType,
                     iterations: iterations + 1,
                 },
                 res
