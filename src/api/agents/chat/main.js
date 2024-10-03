@@ -1,4 +1,5 @@
 // chat/main.js
+import validate from "axion-modules/connectors/validator.ts";
 
 /**
  * Main function for the chat agent.
