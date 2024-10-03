@@ -177,7 +177,7 @@ const functionCall = async (
 
       console.log(`[functionCall] Sending message to user`);
 
-      if (functionAgentResponse.functions.some((func) => func.name === 'callback')) {
+      if (functionAgentResponse?.functions?.some((func) => func.name === 'callback')) {
         const callbackIndex = functionAgentResponse.functions.findIndex((func) => func.name === 'callback');
 
         functionAgentResponse = {
@@ -247,7 +247,7 @@ const functionCall = async (
   }
 
   // 10. Recursion Handling
-  if (functionAgentResponse.functions.length && iterations < maxIter) {
+  if (functionAgentResponse?.functions?.length && iterations < maxIter) {
     if (!Object.keys(actionModules).some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
       if (!functionAgentResponse?.hasFollowUp || functionAgentResponse?.functions?.length) {
 
@@ -260,9 +260,6 @@ const functionCall = async (
           role: 'assistant',
           content: assistantMessage,
         });
-
-
-
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
         return await functionCall(

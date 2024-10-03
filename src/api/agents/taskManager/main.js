@@ -253,8 +253,9 @@ const taskManager = async (
 
         if (taskDoc) {
             try {
+                console.log(updateTaskPayload)
                 console.log(`[taskManager] Updating task: ${taskDoc._id}`);
-                await models.tasks.update({ _id: taskDoc._id });
+                await models.tasks.update({ _id: taskDoc._id }, updateTaskPayload);
                 console.log(`[taskManager] Task updated successfully`);
             } catch (error) {
                 console.error(`[taskManager] Error updating task:`, error);
