@@ -34,10 +34,13 @@ const chatAgent = async (
         thread,
         threadLogs,
         answer,
+        agentType,
         options,
     },
     res
 ) => {
+    agentType = agentType || 'chat';
+    
     console.log(`[chatAgent] Starting chat agent`);
 
     // 1. Extract Modules, Resources, Utils, and Dependencies

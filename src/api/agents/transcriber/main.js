@@ -28,7 +28,8 @@ const base64ToBlob = (base64) => {
     return new Blob([byteArray], { type: mimeType });
   };
   
-  const transcriberAgent = async ({ instructions, audio }, res) => {
+  const transcriberAgent = async ({ instructions, audio, agentType }, res) => {
+    agentType = agentType || 'transcriber';
     try {
       console.log(`[transcriberAgent] Starting transcriber agent`);
   

@@ -4,10 +4,12 @@ import validate from "axion-modules/connectors/validator.ts";
 const maxIter = 3;
 
 const taskManager = async (
-    { answer, threadLogs, instructions, input, audio, user, thread, options, iterations = 0, outputSchema, overrideBaseOutputSchema },
+    { answer, threadLogs, instructions, input, audio, user, thread, options, iterations = 0, outputSchema, overrideBaseOutputSchema, agentType },
     res
 ) => {
     console.log(`[taskManager] Starting iteration ${iterations}`);
+
+    agentType = agentType || 'taskManager';
 
     let currentStep;
     let workflow;
@@ -307,7 +309,7 @@ const taskManager = async (
     };
 
     console.log(`[taskManager] Finished iteration ${iterations}`);
-    return response;
+    return (agentType === 'taskManager' && config?.streamResponseBy === 'turn') ? {} : response;
 };
 
 export default taskManager;

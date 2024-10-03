@@ -20,11 +20,14 @@ const functionCall = async (
     answer,
     user,
     thread,
+    agentType,
     options,
     iterations = 0,
   },
   res
 ) => {
+  agentType = agentType || 'functionCall';
+
   console.log(`[functionCall] Starting iteration ${iterations}`);
 
   let actions = {};
@@ -87,7 +90,7 @@ const functionCall = async (
     // 2.7. Expand and merge to dot notation;
     actions = getDotNotationObject(actionsObj);
   }
-  actions = {...actionModules, ...actions}
+  actions = { ...actionModules, ...actions }
 
   // 3. Get Action Specs
   const actionSpecs = Object.entries(actions)
@@ -119,14 +122,14 @@ const functionCall = async (
   if (!threadLogs || !threadLogs?.length) {
     const lastLog = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
     if (lastLog) {
-        const { prompt, ...agentResponse } = lastLog;
-        threadLogs = prompt || [];
-        const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-        threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
+      const { prompt, ...agentResponse } = lastLog;
+      threadLogs = prompt || [];
+      const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
+      threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
     } else {
-        threadLogs = [];
+      threadLogs = [];
     }
-}
+  }
 
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);
@@ -281,7 +284,7 @@ const functionCall = async (
 
   console.log(`[functionCall] Finished iteration ${iterations}`);
   // 11. Return Response
-  return functionAgentResponse;
+  return (agentType === 'functionCall' && config?.streamResponseBy === 'turn') ? {} : functionAgentResponse;
 };
 
 export default functionCall;
