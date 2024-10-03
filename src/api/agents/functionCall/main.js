@@ -117,14 +117,16 @@ const functionCall = async (
   // 6. Get Thread Logs
   console.log(`[functionCall] Fetching thread history`);
   if (!threadLogs || !threadLogs?.length) {
-    const lastLog = await getThreadHistory(thread.extId, { functionName: 'taskManager', maxRetries: 10 })
+    const lastLog = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
     if (lastLog) {
-      const { prompt, ...agentResponse } = lastLog;
-      threadLogs = prompt;
-      const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-      threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
+        const { prompt, ...agentResponse } = lastLog;
+        threadLogs = prompt || [];
+        const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
+        threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
+    } else {
+        threadLogs = [];
     }
-  }
+}
 
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);

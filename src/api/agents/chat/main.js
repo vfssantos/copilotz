@@ -71,12 +71,14 @@ const chatAgent = async (
     console.log(`[functionCall] Fetching thread history`);
 
     if (!threadLogs || !threadLogs?.length) {
-        const lastLog = await getThreadHistory(thread.extId, { functionName: 'taskManager', maxRetries: 10 })
+        const lastLog = await getThreadHistory(thread.extId, { functionName: 'chatAgent', maxRetries: 10 })
         if (lastLog) {
             const { prompt, ...agentResponse } = lastLog;
-            threadLogs = prompt;
+            threadLogs = prompt || [];
             const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
             threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
+        } else {
+            threadLogs = [];
         }
     }
 
