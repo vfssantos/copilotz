@@ -21,3 +21,14 @@ export default {
     users,
     workflows,
 }
+
+
+const migrations = [];
+
+// 1. add workflows to copilotz and jobs
+migrations.push(`
+alter table copilotz add column workflows text
+alter table jobs add column workflows text
+`);
+
+export { migrations };

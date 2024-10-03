@@ -5,4 +5,5 @@ export default {
     "goal": "string",
     "actions": ["number->actions"],
     "defaultWorkflow": "number->workflows",
+    "workflows": ["number->workflows"]
 }

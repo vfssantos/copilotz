@@ -7,10 +7,14 @@ const getJob = async (req) => {
     if (!copilotz.job) return;
 
     const job = await models.jobs.findOne({ _id: copilotz.job }, { populate: ['actions'] });
-    
-    const workflow = await models.workflows.findOne({ _id: job.defaultWorkflow }, { populate: ['steps'] });
 
-    job.defaultWorkflow = workflow;
+    const workflowIds = job.workflows || [job.defaultWorkflow];
+
+    const workflows = await Promise.all(workflowIds.map(async (workflow) => {
+        return await models.workflows.findOne({ _id: workflow }, { populate: ['steps'] });
+    }));
+
+    job.workflows = workflows;
 
     copilotz.job = job;
 

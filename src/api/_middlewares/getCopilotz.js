@@ -13,7 +13,7 @@ const getCopilotz = async (req) => {
             // Firts, try to find the Copilotz by its id
             copilotzDoc = await models.copilotz.findOne({
                 _id: copilotzId,
-            }, { populate: 'configs' });
+            }, { populate: ['configs', 'workflows'] });
         }
         // If no Copilotz found, return an error
         if (!copilotzDoc) {
