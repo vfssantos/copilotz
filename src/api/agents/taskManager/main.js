@@ -66,8 +66,8 @@ const taskManager = async (
                 currentStep: selectedWorkflow.firstStep,
             };
             const newTask = await models.tasks.create(taskData);
-
             taskDoc = newTask;
+            workflow = selectedWorkflow;
             console.log(`[taskManager] New task created: ${newTask._id}`);
             return taskData
         },
@@ -212,6 +212,9 @@ const taskManager = async (
     const updateTaskPayload = {};
     if (taskManagerAgentResponse.functions) {
         for (const func of taskManagerAgentResponse.functions) {
+            if (!currentStep){
+                currentStep = workflow.steps.find((step) => step._id === taskDoc.currentStep)
+            }
             const { name, args, results, status } = func;
 
             if (name === 'submit') {
