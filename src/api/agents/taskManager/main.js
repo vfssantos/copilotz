@@ -134,7 +134,7 @@ const taskManager = async (
             steps: workflow.steps.map((step) => step.name).join(', '),
             stepInstructions,
             stepName,
-            context: taskDoc.context,
+            context: JSON.stringify(taskDoc.context),
             submitWhen,
         });
 
