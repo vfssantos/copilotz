@@ -86,9 +86,15 @@ function mergeSchemas(schema1, schema2) {
 }
 
 
-function createPrompt(template, data) {
+function createPrompt(template, data, options = { removeUnusedVariables: false }) {
   return template.replace(/\{\{(\w+)\}\}/g, function (match, key) {
-    return data[key] || '';
+    if (data[key] !== undefined) {
+      return data[key];
+    } else if (options.removeUnusedVariables) {
+      return '';
+    } else {
+      return match;
+    }
   });
 }
 

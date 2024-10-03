@@ -215,7 +215,7 @@ const taskManager = async (
     const updateTaskPayload = {};
     if (taskManagerAgentResponse.functions) {
         for (const func of taskManagerAgentResponse.functions) {
-            if (!currentStep){
+            if (!currentStep) {
                 currentStep = workflow.steps.find((step) => step._id === taskDoc.currentStep)
             }
             const { name, args, results, status } = func;
@@ -268,10 +268,9 @@ const taskManager = async (
             }
         }
 
-        // If task has moved to a new step, recursively call taskManager
+        // if any function.name is any of actionModules
         if (
-            updateTaskPayload.currentStep &&
-            updateTaskPayload.currentStep !== currentStep?._id &&
+            Object.keys(actionModules).some((key) => taskManagerAgentResponse.functions.some((func) => func.name === key)) &&
             iterations < maxIter
         ) {
             console.log(`[taskManager] Recursively calling taskManager for next step`);
@@ -318,6 +317,10 @@ export default taskManager;
 
 const currentTaskPromptTemplate = `
 
+================
+{{copilotPrompt}}
+================
+
 ### Task Context
 The current task context is:
 <context>
@@ -331,6 +334,9 @@ Complete the current task step, and submit it using the 'submit' function.
 <currentStep>
 {{stepName}}: {{stepInstructions}}
 </currentStep>
+
+Guidelines:
+- Strictly follow the <currentStep></currentStep> instructions, prioritizing this section over others in this prompt.
 
 ### Submit Step Completion
 Submit this step using the 'submit' function when:
@@ -362,9 +368,10 @@ An excellent response will focus solely on the current step, ensuring that the r
 
 IMPORTANT: ASSURE TO SUBMIT YOUR TASK.
 
-
-
 ================
+{{currentDatePrompt}}
+================
+
 `;
 
 const availableWorkflowsTemplate = `

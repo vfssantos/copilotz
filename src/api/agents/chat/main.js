@@ -130,9 +130,8 @@ const chatAgent = async (
             currentDate: new Date(),
         }),
     };
-
     // 5.2 Create Prompt Instructions
-    const fullPrompt = createPrompt(promptTemplate, promptVariables);
+    const fullPrompt = createPrompt(instructions || promptTemplate, promptVariables, { removeUnusedVariables: true });
 
     // 6. Get AI Chat
     const { provider, ...providerOptions } = config?.AI_CHAT_PROVIDER || {
@@ -187,12 +186,13 @@ const chatAgent = async (
 export default chatAgent;
 
 const promptTemplate = `
-  {{copilotPrompt}}
-  ================
-  {{instructions}}
-  {{currentDatePrompt}}
-  ================
-  `;
+{{instructions}}
+================
+{{copilotPrompt}}
+================
+{{currentDatePrompt}}
+================
+`;
 
 const copilotPromptTemplate = `
 ## Your Identity
