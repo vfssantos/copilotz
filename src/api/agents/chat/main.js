@@ -55,7 +55,7 @@ const chatAgent = async (
     } = chatAgent;
 
     // 1.1 Extract Utils
-    const { createPrompt, getThreadHistory } = utils;
+    const { createPrompt, getThreadHistory, jsonSchemaToShortSchema } = utils;
 
     // 1.2 Extract Dependencies
     const { ai, agents } = modules;
