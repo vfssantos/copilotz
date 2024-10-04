@@ -31,6 +31,10 @@ const chatAgent = async (
         input,
         audio,
         user,
+        inputSchema,
+        outputSchema,
+        overrideBaseInputSchema,
+        overrideBaseOutputSchema,
         thread,
         threadLogs,
         answer,
@@ -62,6 +66,14 @@ const chatAgent = async (
 
     // 1.3 Extract Resources
     const { copilotz, config } = resources;
+
+    // 1.3 Override Base Schemas
+    const baseInputSchema = overrideBaseInputSchema || _baseInputSchema;
+    const baseOutputSchema = overrideBaseOutputSchema || _baseOutputSchema;
+
+    // 1.4. Extract and Merge Schemas
+    inputSchema = inputSchema ? mergeSchemas(baseInputSchema, inputSchema) : baseInputSchema;
+    outputSchema = outputSchema ? mergeSchemas(baseOutputSchema, outputSchema) : baseOutputSchema;
 
     // 2. Extract params
     // 2.1 Get Thread and Turn Ids;
@@ -218,3 +230,38 @@ Current Date Time:
 </currentDate>
 `;
 
+
+const _baseInputSchema = {
+    type: 'object',
+    properties: {
+        instructions: {
+            type: 'string',
+        },
+        input: {
+            type: 'string',
+        },
+    },
+};
+
+const _baseOutputSchema = {
+    type: 'object',
+    properties: {
+        prompt: {
+            type: 'string',
+        },
+        message: {
+            type: 'string',
+        },
+        consumption: {
+            type: 'object',
+            properties: {
+                type: {
+                    type: 'string',
+                },
+                value: {
+                    type: 'number',
+                },
+            },
+        },
+    },
+};
