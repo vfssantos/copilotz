@@ -92,7 +92,7 @@ const chatAgent = async (
             const { prompt, ...agentResponse } = lastLog;
             threadLogs = prompt || [];
             const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-            threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
+            threadLogs.push({ role: 'assistant', content: validatedLastAgentResponse.message });
         } else {
             threadLogs = [];
         }
