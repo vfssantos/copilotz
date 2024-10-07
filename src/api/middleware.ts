@@ -23,7 +23,7 @@ const middleware: any = async (req: any) => {
         await middlewareFn(req);
         Object.assign(middleware, middlewareFn);
     }
-
+    
     return req;
 
 }

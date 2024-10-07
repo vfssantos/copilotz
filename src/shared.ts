@@ -11,7 +11,7 @@ export default ({ env, ...modules }: Record<string, any>) => {
             dbOptions: {
                 authToken: env.DB_TOKEN,
             },
-            debug: false,
+            debug: true,
             serializer: 'stringifyArrays',
             addTimestamps: true
         }

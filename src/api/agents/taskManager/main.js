@@ -17,6 +17,7 @@ const taskManager = async (
 
     // Extract Dependencies
     const { models, modules, resources, utils } = taskManager;
+    console.log('RESOURCES', { ...resources })
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
     const { agents } = modules;
 
