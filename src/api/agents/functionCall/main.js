@@ -253,7 +253,7 @@ const functionCall = async (
   // 10. Recursion Handling
   if (functionAgentResponse?.functions?.length && iterations < maxIter) {
     if (!Object.keys(actionModules).some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
-      if (!functionAgentResponse?.hasFollowUp || functionAgentResponse?.functions?.length) {
+      if (functionAgentResponse?.nextTurn ==='assistant' || functionAgentResponse?.functions?.length) {
 
         const assistantMessage = JSON.stringify(
           validate(jsonSchemaToShortSchema(_baseOutputSchema), functionAgentResponse)
@@ -334,6 +334,7 @@ Guidelines:
 - Look back in your previous message to see the results of your last function calls. 
 - If a function fails, diagnose if there's any error in the args you've passed. If so, retry. If not, provide a clear message to the user.
 - Specify function names and arguments clearly.
+- If you are asking the user for more information or waiting for a user response, set nextTurn to "user". If you have a clear answer, set nextTurn to "assistant".
 `;
 
 const _baseOutputSchema = {
@@ -344,9 +345,13 @@ const _baseOutputSchema = {
       "type": "string",
       "description": "Message for the user",
     },
-    "hasFollowUp": {
-      "type": "boolean",
-      "description": "If true, the agent will wait for the message from the user before continuing the conversation",
+    // "hasFollowUp": {
+    //   "type": "boolean",
+    //   "description": "If true, the agent will wait for the message from the user before continuing the conversation",
+    // },
+    "nextTurn":{
+      'type':'string',
+      'description':'Who is expected to send the next message. Options: "user", "assistant"'
     },
     "functions": {
       "type": "array",
@@ -394,7 +399,7 @@ const _baseOutputSchema = {
     //   additionalProperties: true,
     // },
   },
-  "required": ["functions", "message", "hasFollowUp"],
+  "required": ["functions", "message", "nextTurn"],
 };
 
 

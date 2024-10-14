@@ -17,7 +17,6 @@ const taskManager = async (
 
     // Extract Dependencies
     const { models, modules, resources, utils } = taskManager;
-    console.log('RESOURCES', { ...resources })
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
     const { agents } = modules;
 
@@ -224,10 +223,12 @@ const taskManager = async (
             if (name === 'submit') {
                 console.log(`[taskManager] Processing submit function: status ${status}`);
                 if (status !== 'failed') {
-                    if (!currentStep.next) {
+                    updateTaskPayload.currentStep = currentStep.next;
+                    // check if currentStep.next is the last step in the workflow
+                    const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
+                    if (!nextStep.next) {
                         updateTaskPayload.status = 'completed';
                     }
-                    updateTaskPayload.currentStep = currentStep.next;
                 } else {
                     updateTaskPayload.status = 'failed';
                     if (currentStep.failedNext) {
