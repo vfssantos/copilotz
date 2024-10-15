@@ -377,11 +377,11 @@ const _baseOutputSchema = {
           },
           "results": {
             "type": "any",
-            "description": "To be filled with function result",
+            "description": "Set as `null`. Will be filled with function result",
           },
           "status": {
             "type": "string",
-            "description": "Function status",
+            "description": "Set as `null`. Will be filled with function result status",
           },
         },
         "required": ["name"],
