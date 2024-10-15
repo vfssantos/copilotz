@@ -61,17 +61,15 @@ const taskManager = async (
             const taskData = {
                 name: selectedWorkflow.name,
                 description: selectedWorkflow.description,
-                context: { user },
+                context: { user, createdAt: new Date().toISOString() },
                 extId: externalId,
                 status: 'active',
                 workflow: selectedWorkflow._id,
                 currentStep: selectedWorkflow.firstStep,
             };
             const newTask = await models.tasks.create(taskData);
-            taskDoc = newTask;
-            workflow = selectedWorkflow;
             console.log(`[taskManager] New task created: ${newTask._id}`);
-            return taskData
+            return newTask
         },
         listSteps: () => workflow.steps.map((step) => ({ name: step.name, description: step.description })),
         getStep: ({ name }) => {
@@ -81,12 +79,61 @@ const taskManager = async (
             }
             return step;
         },
-        submit: (args) => args,
+        submit: async (args, onSubmit) => {
+            console.log(`[taskManager] Processing submit function`);
+
+            const updateTaskPayload = {};
+            let status = 'completed';
+            let results;
+
+            try {
+                results = onSubmit ? await onSubmit(args) : args;
+            } catch (error) {
+                status = 'failed';
+                results = { error };
+                console.error(`[taskManager] Error processing submit function:`, error);
+            }
+
+            if (status !== 'failed') {
+                updateTaskPayload.currentStep = currentStep.next;
+                // check if currentStep.next is the last step in the workflow
+                const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
+                if (!nextStep.next) {
+                    updateTaskPayload.status = 'completed';
+                }
+            } else {
+                updateTaskPayload.status = 'failed';
+                if (currentStep.failedNext) {
+                    updateTaskPayload.currentStep = currentStep.failedNext;
+                }
+            }
+
+            // Update task context with submission details
+            const updatedAt = new Date().toISOString();
+
+            updateTaskPayload.context = {
+                steps: {
+                    ...taskDoc?.context?.steps,
+                    [currentStep.name]: { ...args, updatedAt }
+                },
+                data: {
+                    ...taskDoc?.context?.data,
+                    ...results
+                },
+                updatedAt
+            }
+
+            await models.tasks.update({ _id: taskDoc._id }, updateTaskPayload);
+
+            console.log('[taskManager] Updating task step...');
+            return results;
+        },
         changeStep: async ({ name }) => {
             const step = workflow.steps.find((step) => step.name === name);
             if (!step) {
                 throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
             }
+
             const updatedTask = await models.tasks.update({ _id: taskDoc._id }, { currentStep: step._id });
             return { name: step.name, description: step.description, id: step._id };
         },
@@ -96,8 +143,8 @@ const taskManager = async (
         createTask: `(creates a new task): !workflowName<string>(name of the workflow to start)->(returns task object)`,
         changeStep: `(changes current step): !name<string>(name of the step to change to)->(returns string 'step changed')`,
         listSteps: `(lists all steps in the workflow): ->(returns array of step names)`,
-        getStep: `(gets step details by name): !name<string>(name of the step)->(returns step details)`,
-        submit: `(submits step completion): <any>(object with "any" type to be stored in context for future references)->(returns the current step's context)`,
+        getStep: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
+        submit: `(submits step for review): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
     };
 
     Object.keys(actionModules).filter(Boolean).forEach((actionName) => {
@@ -210,95 +257,34 @@ const taskManager = async (
             error: { code: 'INVALID_RESPONSE', message: err.message || 'Invalid response format' },
         };
     }
-
-    // Process functions returned by the assistant
-    const updateTaskPayload = {};
-    if (taskManagerAgentResponse.functions) {
-        for (const func of taskManagerAgentResponse.functions) {
-            if (!currentStep) {
-                currentStep = workflow.steps.find((step) => step._id === taskDoc.currentStep)
-            }
-            const { name, args, results, status } = func;
-
-            if (name === 'submit') {
-                console.log(`[taskManager] Processing submit function: status ${status}`);
-                if (status !== 'failed') {
-                    updateTaskPayload.currentStep = currentStep.next;
-                    // check if currentStep.next is the last step in the workflow
-                    const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
-                    if (!nextStep.next) {
-                        updateTaskPayload.status = 'completed';
-                    }
-                } else {
-                    updateTaskPayload.status = 'failed';
-                    if (currentStep.failedNext) {
-                        updateTaskPayload.currentStep = currentStep.failedNext;
-                    }
-                }
-                // Update task context with submission details
-                const stepIndex = workflow.steps.findIndex((step) => step._id === currentStep._id);
-                updateTaskPayload[`context.steps.${stepIndex}.submitParams`] = args;
-                updateTaskPayload[`context.steps.${stepIndex}.submitResponse`] = results;
-                updateTaskPayload[`context.steps.${stepIndex}.updatedAt`] = new Date().toISOString();
-
-                console.log('[taskManager] Updating task step...');
-            } else if (name === 'createTask') {
-                console.log(`[taskManager] Processing createTask function`);
-                updateTaskPayload.context = { createdAt: new Date().toISOString() };
-                updateTaskPayload.currentStep = results._id
-                // Task is already created inside the createTask action
-                // No additional processing needed here
-            } else if (name === 'changeStep') {
-                console.log(`[taskManager] Processing changeStep function`);
-                updateTaskPayload.currentStep = results._id;
-            } else {
-                // Handle other functions if necessary
-            }
-        }
-    }
-
-    if (Object.keys(updateTaskPayload).length) {
-
-        if (taskDoc) {
-            try {
-                console.log(updateTaskPayload)
-                console.log(`[taskManager] Updating task: ${taskDoc._id}`);
-                await models.tasks.update({ _id: taskDoc._id }, updateTaskPayload);
-                console.log(`[taskManager] Task updated successfully`);
-            } catch (error) {
-                console.error(`[taskManager] Error updating task:`, error);
-            }
-        }
-
-        // if any function.name is any of actionModules
-        if (
-            Object.keys(actionModules).some((key) => taskManagerAgentResponse.functions.some((func) => func.name === key)) &&
-            iterations < maxIter
-        ) {
-            console.log(`[taskManager] Recursively calling taskManager for next step`);
-            return await taskManager(
-                {
-                    input: '',
-                    actionModules,
-                    user,
-                    thread,
-                    threadLogs: [
-                        ...threadLogs,
-                        {
-                            role: 'assistant',
-                            content: JSON.stringify(validate(
-                                jsonSchemaToShortSchema(outputSchema),
-                                functionCallAgentResponse
-                            ))
-                        },
-                    ],
-                    options,
-                    agentType,
-                    iterations: iterations + 1,
-                },
-                res
-            );
-        }
+    // if any function.name is any of actionModules
+    if (
+        Object.keys(actionModules)?.some((key) => taskManagerAgentResponse.functions?.some((func) => func.name === key)) &&
+        iterations < maxIter
+    ) {
+        console.log(`[taskManager] Recursively calling taskManager for next step`);
+        return await taskManager(
+            {
+                input: '',
+                actionModules,
+                user,
+                thread,
+                threadLogs: [
+                    ...threadLogs,
+                    {
+                        role: 'assistant',
+                        content: JSON.stringify(validate(
+                            jsonSchemaToShortSchema(outputSchema),
+                            functionCallAgentResponse
+                        ))
+                    },
+                ],
+                options,
+                agentType,
+                iterations: iterations + 1,
+            },
+            res
+        );
     }
 
     // Prepare the final response in consistent format
@@ -427,21 +413,3 @@ const _baseOutputSchema = {
     },
     required: ['message', 'functions'],
 };
-
-// Helper function to import action modules
-async function importActionModule(action) {
-    let actionModule;
-    if (action.moduleUrl?.startsWith('http')) {
-        actionModule = await import(action.moduleUrl).then((module) => module.default);
-    } else if (action.moduleUrl?.startsWith('native:')) {
-        actionModule = await import(
-            new URL(`../../modules/${action.moduleUrl.slice(7)}`, import.meta.url)
-        ).then((module) => module.default);
-    } else {
-        throw new Error(
-            `Invalid Module URL: namespace for ${action.moduleUrl} not found. Should either start with 'http:', 'https:', or 'native:'.`
-        );
-    }
-    Object.assign(actionModule, taskManager);
-    return actionModule;
-}

@@ -90,7 +90,18 @@ const functionCall = async (
     // 2.7. Expand and merge to dot notation;
     actions = getDotNotationObject(actionsObj);
   }
-  actions = { ...actionModules, ...actions }
+
+  // 2.8. If inherited actionModules, run actions with the same name through actionModules as hooks
+  Object.keys(actionModules).forEach((actionModule) => {
+    if (actions[actionModule]) {
+      const action = actions[actionModule];
+      actions[actionModule] = (args) => actionModules[actionModule](args, action)
+      Object.assign(actions[actionModule], action)
+    }
+    else {
+      actions[actionModule] = actionModules[actionModule]
+    }
+  });
 
   // 3. Get Action Specs
   const actionSpecs = Object.entries(actions)
@@ -252,8 +263,8 @@ const functionCall = async (
 
   // 10. Recursion Handling
   if (functionAgentResponse?.functions?.length && iterations < maxIter) {
-    if (!Object.keys(actionModules).some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
-      if (functionAgentResponse?.nextTurn ==='assistant' || functionAgentResponse?.functions?.length) {
+    if (!Object.keys(actionModules)?.some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
+      if (functionAgentResponse?.nextTurn === 'assistant' || functionAgentResponse?.functions?.length) {
 
         const assistantMessage = JSON.stringify(
           validate(jsonSchemaToShortSchema(_baseOutputSchema), functionAgentResponse)
@@ -319,13 +330,11 @@ Guidelines:
 const responseFormatPromptTemplate = ({ outputSchema, inputSchema }, jsonSchemaToShortSchema) => `
 ### Messages Format
 
-<userMessage>
+User Input:
 ${JSON.stringify(jsonSchemaToShortSchema(inputSchema, { detailed: true }))}
-</userMessage>
 
-<assistantMessage>
+Assistant Response:
 ${JSON.stringify(jsonSchemaToShortSchema(outputSchema, { detailed: true }))}
-</assistantMessage>
 
 Guidelines:
 - JSON format is expected. Boolean values should be either \`true\` or \`false\` (not to be confused with string format \`"true"\` and \`"false"\`).
@@ -343,15 +352,15 @@ const _baseOutputSchema = {
   "properties": {
     "message": {
       "type": "string",
-      "description": "Message for the user",
+      "description": "Assistant message goes here",
     },
     // "hasFollowUp": {
     //   "type": "boolean",
     //   "description": "If true, the agent will wait for the message from the user before continuing the conversation",
     // },
-    "nextTurn":{
-      'type':'string',
-      'description':'Who is expected to send the next message. Options: "user", "assistant"'
+    "nextTurn": {
+      'type': 'string',
+      'description': `Enum ['user', 'assistant']. Who is expected to send the next message.`
     },
     "functions": {
       "type": "array",
@@ -409,7 +418,7 @@ const _baseInputSchema = {
   "properties": {
     "message": {
       "type": "string",
-      "description": "User input message"
+      "description": "User message goes here"
     },
   },
   "required": ["message"]
