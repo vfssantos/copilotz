@@ -207,7 +207,7 @@ const functionCall = async (
     } catch (err) {
       let errorMessage;
       responseJson.functions = [];
-      console.log('[functionCall] INVALID JSON, Trying again!', err);
+      console.log('[functionCall] INVALID JSON, Trying again!', err, 'answer:', chatAgentResponse.message);
       if (typeof err === 'string') {
         errorMessage = err;
       } else if (err.message) {
