@@ -374,7 +374,7 @@ const _baseOutputSchema = {
           },
           "args": {
             "type": "object",
-            "description": "{...args,[arg_name]:arg_value}",
+            "description": `{"argument_name": "argument_value", "argument_name_2": "argument_value_2", ...}`,
           },
           "results": {
             "type": "any",
