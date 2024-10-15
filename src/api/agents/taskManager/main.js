@@ -48,7 +48,7 @@ const taskManager = async (
             // Let the assistant decide which workflow to start based on user input
             const workflowName = args.workflowName;
             if (!workflowName) {
-                throw new Error('Error creating task: `workflowName` arg is required, found:', +Object.keys(args).join(','));
+                throw new Error(`Error creating task: 'workflowName' arg is required, found: ${Object.keys(args).join(',')}`);
             };
             const selectedWorkflow = allWorkflows.filter(Boolean).find(
                 (wf) => wf.name.toLowerCase() === workflowName.toLowerCase()
@@ -126,7 +126,7 @@ const taskManager = async (
         changeStep: async ({ stepName }) => {
             const step = workflow.steps.find((step) => step.name === stepName);
             if (!step) {
-                throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
+                throw new Error(`Step "${stepName}" not found in workflow "${workflow.name}"`);
             }
 
             const updatedTask = await models.tasks.update({ _id: taskDoc._id }, { currentStep: step._id });
@@ -186,7 +186,7 @@ const taskManager = async (
             submitWhen,
         });
 
-        instructions = taskManagerPrompt + instructions;
+        instructions = taskManagerPrompt + (instructions || '');
     } else {
         // No active task found
         // Assistant should decide whether to start a task based on user input
@@ -339,7 +339,7 @@ Submit this step using the 'submit' function when:
 ### Example
 Example message for submitting a step:
 <exampleAssistantMessage>
-message: "Updating the task status"
+message: ""
 functions: [
     {
         "name": "submit",
@@ -353,12 +353,7 @@ functions: [
 </exampleAssistantMessage>
 
 Guidelines
-- YOU MUST submit AS SOON AS the condition of \`submitWhen\` has been satisfied, NOT BEFORE NOR AFTER THAT.
-- When you submit, just let the user know in your message that you are updating the status, AND NOTHING MORE.
-
-An excellent response will focus solely on the current step, ensuring that the required information is collected before proceeding.
-
-IMPORTANT: ASSURE TO SUBMIT YOUR TASK.
+- Submit as soon as the condition of \`submitWhen\` has been satisfied, unless instructed otherwise in other parts of this prompt.
 
 ================
 {{currentDatePrompt}}
@@ -421,3 +416,6 @@ const _baseOutputSchema = {
     },
     required: ['message', 'functions'],
 };
+
+
+

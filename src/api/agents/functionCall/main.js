@@ -92,9 +92,10 @@ const functionCall = async (
   }
 
   // 2.8. If inherited actionModules, run actions with the same name through actionModules as hooks
+
   Object.keys(actionModules).forEach((actionModule) => {
-    if (actions[actionModule]) {
-      const action = actions[actionModule];
+    const action = actions[actionModule];
+    if (action) {
       actions[actionModule] = (args) => actionModules[actionModule](args, action)
       Object.assign(actions[actionModule], action)
     }
@@ -156,7 +157,7 @@ const functionCall = async (
       input: formattedInput,
       audio,
       agentType,
-      instructions: functionsPrompt + instructions,
+      instructions: functionsPrompt + (instructions || ''),
     },
     res
   );
