@@ -263,6 +263,7 @@ const functionCall = async (
 
   // 10. Recursion Handling
   if (functionAgentResponse?.functions?.length && iterations < maxIter) {
+    console.log('[functionCall] Checking for recursion', actionModules, functionAgentResponse.functions);
     if (!Object.keys(actionModules)?.some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
       if (functionAgentResponse?.nextTurn === 'assistant' || functionAgentResponse?.functions?.length) {
 
@@ -328,16 +329,16 @@ Guidelines:
 `;
 
 const responseFormatPromptTemplate = ({ outputSchema, inputSchema }, jsonSchemaToShortSchema) => `
-### Messages Format
+### Formatting
 
-User Input:
+User Input Format:
 ${JSON.stringify(jsonSchemaToShortSchema(inputSchema, { detailed: true }))}
 
-Assistant Response:
+Assistant Response Format:
 ${JSON.stringify(jsonSchemaToShortSchema(outputSchema, { detailed: true }))}
 
 Guidelines:
-- JSON format is expected. Boolean values should be either \`true\` or \`false\` (not to be confused with string format \`"true"\` and \`"false"\`).
+- Valid JSON format is expected in both User Input and Assistant Response. Boolean values should be either \`true\` or \`false\` (not to be confused with string format \`"true"\` and \`"false"\`).
 - Only the <message> content is visible to the user. Therefore, include all necessary information in the message.
 - Parallel functions can be run by adding them to the functions array.
 - Look back in your previous message to see the results of your last function calls. 
