@@ -49,8 +49,8 @@ const taskManager = async (
             const workflowName = args.workflowName;
             if (!workflowName) {
                 throw new Error('Error creating task: `workflowName` arg is required, found:', +Object.keys(args).join(','));
-            }
-            const selectedWorkflow = allWorkflows.find(
+            };
+            const selectedWorkflow = allWorkflows.filter(Boolean).find(
                 (wf) => wf.name.toLowerCase() === workflowName.toLowerCase()
             );
 
@@ -71,8 +71,8 @@ const taskManager = async (
             console.log(`[taskManager] New task created: ${newTask._id}`);
             return newTask
         },
-        listSteps: () => workflow.steps.map((step) => ({ name: step.name, description: step.description })),
-        getStep: ({ name }) => {
+        listCurrentWorkflowSteps: () => workflow.steps.map((step) => ({ name: step.name, description: step.description })),
+        getStepDetails: ({ name }) => {
             const step = workflow.steps.find((step) => step.name === name);
             if (!step) {
                 throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
@@ -123,8 +123,8 @@ const taskManager = async (
             console.log('[taskManager] Updating task step...');
             return results;
         },
-        changeStep: async ({ name }) => {
-            const step = workflow.steps.find((step) => step.name === name);
+        changeStep: async ({ stepName }) => {
+            const step = workflow.steps.find((step) => step.name === stepName);
             if (!step) {
                 throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
             }
@@ -132,14 +132,16 @@ const taskManager = async (
             const updatedTask = await models.tasks.update({ _id: taskDoc._id }, { currentStep: step._id });
             return { name: step.name, description: step.description, id: step._id };
         },
+        listWorkflows: () => allWorkflows.filter(Boolean).map(({ name, description }) => ({ name, description })),
     };
 
     const actionSpecs = {
-        createTask: `(creates a new task): !workflowName<string>(name of the workflow to start)->(returns task object)`,
-        changeStep: `(changes current step): !name<string>(name of the step to change to)->(returns string 'step changed')`,
-        listSteps: `(lists all steps in the workflow): ->(returns array of step names)`,
-        getStep: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
-        submit: `(submits step for review): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
+        listWorkflows: `(lists all workflows): ->(returns array of workflow names)`,
+        createTask: `(creates a new task for a given workflow): !workflowName<string>(name of the workflow to start)->(returns task object)`,
+        changeStep: `(changes the current step of the working task in current workflow): !stepName<string>(name of the step to change to)->(returns string 'step changed')`,
+        listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
+        getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
+        submit: `(submits task for review in current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
     };
 
     Object.keys(actionModules).filter(Boolean).forEach((actionName) => {
@@ -285,7 +287,7 @@ const taskManager = async (
         );
     }
 
-    if (currentStep && !currentStep?.next){
+    if (currentStep && !currentStep?.next) {
         models.tasks.update({ _id: taskDoc._id }, { status: 'completed' });
     }
 
