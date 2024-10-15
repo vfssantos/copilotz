@@ -263,7 +263,6 @@ const functionCall = async (
 
   // 10. Recursion Handling
   if (functionAgentResponse?.functions?.length && iterations < maxIter) {
-    console.log('[functionCall] Checking for recursion', actionModules, functionAgentResponse.functions);
     if (!Object.keys(actionModules)?.some(actionName => functionAgentResponse.functions.map(func => func.name).includes(actionName))) {
       if (functionAgentResponse?.nextTurn === 'assistant' || functionAgentResponse?.functions?.length) {
 
@@ -374,7 +373,7 @@ const _baseOutputSchema = {
           },
           "args": {
             "type": "object",
-            "description": `{"argument_name": "argument_value", "argument_name_2": "argument_value_2", ...}`,
+            "description": `JSON object (not stringified!) with the function arguments. Ex.: {"arg_name": "arg_value", "arg_name_2": "arg_value_2", ...}`,
           },
           "results": {
             "type": "any",

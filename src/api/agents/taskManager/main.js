@@ -97,8 +97,8 @@ const taskManager = async (
             if (status !== 'failed') {
                 updateTaskPayload.currentStep = currentStep.next;
                 // check if currentStep.next is the last step in the workflow
-                const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
-                if (!nextStep.next) {
+                // const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
+                if (!currentStep.next) {
                     updateTaskPayload.status = 'completed';
                 }
             } else {
@@ -114,13 +114,8 @@ const taskManager = async (
             updateTaskPayload.context = {
                 steps: {
                     ...taskDoc?.context?.steps,
-                    [currentStep.name]: { ...args, updatedAt }
-                },
-                data: {
-                    ...taskDoc?.context?.data,
-                    ...results
-                },
-                updatedAt
+                    [currentStep.name]: { args, results, updatedAt }
+                }
             }
 
             await models.tasks.update({ _id: taskDoc._id }, updateTaskPayload);
@@ -155,6 +150,7 @@ const taskManager = async (
         console.log(`[taskManager] Fetching workflow and current step`);
         workflow = await models.workflows.findOne({ _id: taskDoc.workflow }, { populate: ['steps'] });
         currentStep = await models.steps.findOne({ _id: taskDoc.currentStep }, { populate: ['actions'] });
+        currentStep.onSubmit = currentStep?.onSubmit ? await models.actions.findOne({ _id: currentStep.onSubmit }) : null;
 
         if (currentStep?.job?._id && currentStep?.job?._id !== copilotz?.job?._id) {
             const job = await models.jobs.findOne({ _id: currentStep.job }, { populate: ['actions'] });
@@ -174,6 +170,7 @@ const taskManager = async (
             ...(copilotz.actions || []),
             ...(copilotz?.job?.actions || []),
             ...(currentStep?.actions || []),
+            (currentStep?.onSubmit || null),
         ].filter(Boolean);
 
         // 3. Create Instructions
@@ -257,6 +254,7 @@ const taskManager = async (
             error: { code: 'INVALID_RESPONSE', message: err.message || 'Invalid response format' },
         };
     }
+
     // if any function.name is any of actionModules
     if (
         Object.keys(actionModules)?.some((key) => taskManagerAgentResponse.functions?.some((func) => func.name === key)) &&
@@ -285,6 +283,10 @@ const taskManager = async (
             },
             res
         );
+    }
+
+    if (currentStep && !currentStep?.next){
+        models.tasks.update({ _id: taskDoc._id }, { status: 'completed' });
     }
 
     // Prepare the final response in consistent format
@@ -359,10 +361,12 @@ IMPORTANT: ASSURE TO SUBMIT YOUR TASK.
 ================
 {{currentDatePrompt}}
 ================
-
 `;
 
 const availableWorkflowsTemplate = `
+================
+{{copilotPrompt}}
+================
 ## Your Assignment:
  Start a task from on of the following available workflows.
 
@@ -373,6 +377,8 @@ Guidelines:
 - Workflows above are formatted in the form \`- [name]: [description]\`
 - Start tasks as soon as you identify the user intent. This is important so you can get more instructions for how to complete the task.
 - When starting a task, use the 'createTask' function with the appropriate workflowName and wait for further instructions from the system.
+================
+{{currentDatePrompt}}
 ================
 `;
 
