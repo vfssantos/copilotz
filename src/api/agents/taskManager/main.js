@@ -339,15 +339,13 @@ Submit this step using the 'submit' function when:
 ### Example
 Example message for submitting a step:
 <exampleAssistantMessage>
-message: "" // message to be displayed to the user when the step is submitted. blank is fine.
+message: "" // message to be displayed to the user when you are submitting the step. blank is fine.
 functions: [
     {
         "name": "submit",
         "args": {
             "data": {"foo":"bar"}
-        },
-        "results": {"foo":"bar"},
-        "status": "completed"
+        }
     },
 ]
 </exampleAssistantMessage>
