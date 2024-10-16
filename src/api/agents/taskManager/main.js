@@ -339,7 +339,7 @@ Submit this step using the 'submit' function when:
 ### Example
 Example message for submitting a step:
 <exampleAssistantMessage>
-message: ""
+message: "" // message to be displayed to the user when the step is submitted. blank is fine.
 functions: [
     {
         "name": "submit",
