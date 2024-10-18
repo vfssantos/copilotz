@@ -79,7 +79,10 @@ const taskManager = async (
             }
             return step;
         },
-        submit: async (args, onSubmit) => {
+        submit: async (_args, onSubmit) => {
+
+            const { _user, ...args } = _args;
+
             console.log(`[taskManager] Processing submit function`);
 
             const updateTaskPayload = {};
@@ -97,7 +100,6 @@ const taskManager = async (
             if (status !== 'failed') {
                 updateTaskPayload.currentStep = currentStep.next;
                 // check if currentStep.next is the last step in the workflow
-                // const nextStep = workflow.steps.find((step) => step._id === currentStep.next);
                 if (!currentStep.next) {
                     updateTaskPayload.status = 'completed';
                 }
@@ -141,7 +143,7 @@ const taskManager = async (
         changeStep: `(changes the current step of the working task in current workflow): !stepName<string>(name of the step to change to)->(returns string 'step changed')`,
         listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
         getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
-        submit: `(submits task for review in current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
+        submit: `(submits current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
     };
 
     Object.keys(actionModules).filter(Boolean).forEach((actionName) => {
@@ -308,10 +310,8 @@ const taskManager = async (
 export default taskManager;
 
 const currentTaskPromptTemplate = `
-================
 {{copilotPrompt}}
 ================
-
 
 ## TASK CONTEXT
 
@@ -360,7 +360,6 @@ Guidelines
 `;
 
 const availableWorkflowsTemplate = `
-================
 {{copilotPrompt}}
 ================
 ## YOUR ASSIGNMENT:

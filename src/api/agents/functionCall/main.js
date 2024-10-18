@@ -305,9 +305,9 @@ export default functionCall;
 
 const promptTemplate = `
 {{functionCallsPrompt}}
-===============
+================
 {{responseFormatPrompt}}
-===============
+================
 `;
 
 const functionCallsPromptTemplate = `
@@ -387,25 +387,6 @@ const _baseOutputSchema = {
       },
       "description": "List of functions",
     },
-    // "error": {
-    //   "type": "object",
-    //   "description": "Error object",
-    //   "properties": {
-    //     "status": {
-    //       "type": "string",
-    //       "description": "Error status code",
-    //     },
-    //     "code": {
-    //       "type": "string",
-    //       "description": "Error code",
-    //     },
-    //     "message": {
-    //       "type": "string",
-    //       "description": "Error message",
-    //     },
-    //   },
-    //   additionalProperties: true,
-    // },
   },
   "required": ["functions", "message", "nextTurn"],
 };
