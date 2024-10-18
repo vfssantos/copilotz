@@ -207,13 +207,15 @@ const promptTemplate = `
 `;
 
 const copilotPromptTemplate = `
-## Your Identity
+## YOUR IDENTITY
+
 Your name is {{name}}. Here's your backstory:
 <backstory>
 {{backstory}}
 </backstory>
 
-## Your Job
+## YOUR JOB
+
 Here's your job details:
 <job>
 Goal: {{jobGoal}}

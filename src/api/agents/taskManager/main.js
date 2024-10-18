@@ -308,21 +308,12 @@ const taskManager = async (
 export default taskManager;
 
 const currentTaskPromptTemplate = `
-
 ================
 {{copilotPrompt}}
 ================
 
-### Task Context
-The current task context is:
-<context>
-{{context}}
-</context>
+## INSTRUCTIONS FOR CURRENT STEP
 
-## Your Assignment:
-Complete the current task step, and submit it using the 'submit' function.
-
-### Instructions for your current task step:
 <currentStep>
 {{stepName}}: {{stepInstructions}}
 </currentStep>
@@ -331,12 +322,14 @@ Guidelines:
 - Strictly follow the <currentStep></currentStep> instructions, prioritizing this section over others in this prompt.
 
 ### Submit Step Completion
+
 Submit this step using the 'submit' function when:
 <submitWhen>
 {{submitWhen}}
 </submitWhen>
 
 ### Example
+
 Example message for submitting a step:
 <exampleAssistantMessage>
 message: "" // message to be displayed to the user when you are submitting the step. blank is fine.
@@ -356,22 +349,33 @@ Guidelines
 ================
 {{currentDatePrompt}}
 ================
+
+## TASK CONTEXT
+
+The current task context is:
+<context>
+{{context}}
+</context>
+
 `;
 
 const availableWorkflowsTemplate = `
 ================
 {{copilotPrompt}}
 ================
-## Your Assignment:
- Start a task from on of the following available workflows.
+## YOUR ASSIGNMENT:
+
+Start a task from on of the following available workflows.
 
 <workflows>
 {{workflows}}
 </workflows>
+
 Guidelines:
 - Workflows above are formatted in the form \`- [name]: [description]\`
 - Start tasks as soon as you identify the user intent. This is important so you can get more instructions for how to complete the task.
 - When starting a task, use the 'createTask' function with the appropriate workflowName and wait for further instructions from the system.
+
 ================
 {{currentDatePrompt}}
 ================

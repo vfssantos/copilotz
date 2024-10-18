@@ -304,8 +304,6 @@ const functionCall = async (
 export default functionCall;
 
 const promptTemplate = `
-## Function Call Instructions
-
 {{functionCallsPrompt}}
 ===============
 {{responseFormatPrompt}}
@@ -313,7 +311,7 @@ const promptTemplate = `
 `;
 
 const functionCallsPromptTemplate = `
-### Available Functions
+## FUNCTION CALLS
 
 You have the following functions you can call:
 
@@ -329,7 +327,7 @@ Guidelines:
 `;
 
 const responseFormatPromptTemplate = ({ outputSchema, inputSchema }, jsonSchemaToShortSchema) => `
-### Formatting
+## FORMATTING
 
 User Input Format:
 ${JSON.stringify(jsonSchemaToShortSchema(inputSchema, { detailed: true }))}
