@@ -312,6 +312,14 @@ const currentTaskPromptTemplate = `
 {{copilotPrompt}}
 ================
 
+
+## TASK CONTEXT
+
+The current task context is:
+<context>
+{{context}}
+</context>
+
 ## INSTRUCTIONS FOR CURRENT STEP
 
 <currentStep>
@@ -349,14 +357,6 @@ Guidelines
 ================
 {{currentDatePrompt}}
 ================
-
-## TASK CONTEXT
-
-The current task context is:
-<context>
-{{context}}
-</context>
-
 `;
 
 const availableWorkflowsTemplate = `
