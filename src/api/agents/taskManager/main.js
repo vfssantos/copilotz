@@ -135,6 +135,10 @@ const taskManager = async (
             return { name: step.name, description: step.description, id: step._id };
         },
         listWorkflows: () => allWorkflows.filter(Boolean).map(({ name, description }) => ({ name, description })),
+        cancelTask: async () => {
+            await models.tasks.update({ _id: taskDoc._id }, { status: 'cancelled' });
+            return { message: 'Task cancelled' };
+        }
     };
 
     const actionSpecs = {
@@ -143,6 +147,7 @@ const taskManager = async (
         changeStep: `(changes the current step of the working task in current workflow): !stepName<string>(name of the step to change to)->(returns string 'step changed')`,
         listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
         getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
+        cancelTask: `(cancels the current task): ->(returns string 'task cancelled')`,
         submit: `(submits current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
     };
 
