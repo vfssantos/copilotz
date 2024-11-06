@@ -90,7 +90,7 @@ const taskManager = async (
             let results;
 
             try {
-                results = onSubmit ? await onSubmit(args) : undefined;
+                results = onSubmit ? await onSubmit(args) : args;
             } catch (error) {
                 status = 'failed';
                 results = { error };
@@ -120,7 +120,7 @@ const taskManager = async (
                 },
                 state: {
                     ...taskDoc?.context?.state,
-                    ...args
+                    ...results
                 }
             }
 
@@ -198,7 +198,7 @@ const taskManager = async (
             steps: workflow.steps.map((step) => step.name).join(', '),
             stepInstructions,
             stepName,
-            context: JSON.stringify(taskDoc.context),
+            context: JSON.stringify(taskDoc?.context?.state),
             submitWhen,
         });
 
@@ -326,6 +326,10 @@ export default taskManager;
 const currentTaskPromptTemplate = `
 {{copilotPrompt}}
 ================
+{{functionCallsPrompt}}
+================
+{{responseFormatPrompt}}
+================
 
 ## TASK CONTEXT
 
@@ -373,6 +377,10 @@ Guidelines
 
 const availableWorkflowsTemplate = `
 {{copilotPrompt}}
+================
+{{functionCallsPrompt}}
+================
+{{responseFormatPrompt}}
 ================
 ## YOUR ASSIGNMENT:
 

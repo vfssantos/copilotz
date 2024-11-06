@@ -114,7 +114,7 @@ const functionCall = async (
   console.log(`[functionCall] Generated ${Object.keys(actions).length} action specs`);
 
   // 4. Create Prompt
-  const functionsPrompt = createPrompt(promptTemplate, {
+  const functionsPrompt = createPrompt(instructions || promptTemplate, {
     responseFormatPrompt: createPrompt(
       responseFormatPromptTemplate({ outputSchema, inputSchema }, jsonSchemaToShortSchema),
       {}
@@ -157,7 +157,7 @@ const functionCall = async (
       input: formattedInput,
       audio,
       agentType,
-      instructions: functionsPrompt + (instructions || ''),
+      instructions: functionsPrompt,
     },
     res
   );
