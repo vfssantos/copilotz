@@ -90,7 +90,7 @@ const taskManager = async (
             let results;
 
             try {
-                results = onSubmit ? await onSubmit(args) : args;
+                results = onSubmit ? await onSubmit(args) : undefined;
             } catch (error) {
                 status = 'failed';
                 results = { error };
@@ -117,6 +117,10 @@ const taskManager = async (
                 steps: {
                     ...taskDoc?.context?.steps,
                     [currentStep.name]: { args, results, updatedAt }
+                },
+                state: {
+                    ...taskDoc?.context?.state,
+                    ...args
                 }
             }
 
@@ -138,7 +142,11 @@ const taskManager = async (
         cancelTask: async () => {
             await models.tasks.update({ _id: taskDoc._id }, { status: 'cancelled' });
             return { message: 'Task cancelled' };
-        }
+        },
+        setState: async ({ key, value }) => {
+            await models.tasks.update({ _id: taskDoc._id }, { context: { ...taskDoc.context, state: { ...taskDoc.context.state, [key]: value } } });
+            return { message: 'Context updated' };
+        },
     };
 
     const actionSpecs = {
@@ -148,6 +156,7 @@ const taskManager = async (
         listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
         getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
         cancelTask: `(cancels the current task): ->(returns string 'task cancelled')`,
+        setState: `(sets a value for a given key in the task state): !key<string>(key to set), !value<any>(value to set)->(returns string 'context updated')`,
         submit: `(submits current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
     };
 
@@ -349,9 +358,7 @@ message: "" // message to be displayed to the user when you are submitting the s
 functions: [
     {
         "name": "submit",
-        "args": {
-            "data": {"foo":"bar"}
-        }
+        "args": {"foo":"bar", ...}
     },
 ]
 </exampleAssistantMessage>
