@@ -61,7 +61,16 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
       const formattedArgs = args.join(", ");
 
       // Combine all the parts
-      const spec = `(${summary}):${formattedArgs}->${responses["200"].description}`;
+      const responseParams = [];
+      if (responses["200"]?.content?.["application/json"]?.schema?.properties) {
+        const properties = responses["200"].content["application/json"].schema.properties;
+        Object.entries(properties).forEach(([paramName, paramDetails]) => {
+          responseParams.push(`${paramName}<${paramDetails.type}>`);
+        });
+      }
+      
+      const responseParamsStr = responseParams.length ? `{${responseParams.join(", ")}}` : "";
+      const spec = `(${summary}):${formattedArgs}->(${responses["200"].description})${responseParamsStr}`;
 
       actions[operationId] = ({ _user, ...params }) => request(
         new URL(path, baseUrl).href,
