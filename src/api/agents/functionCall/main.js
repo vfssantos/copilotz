@@ -321,7 +321,7 @@ You have the following functions you can call:
 
 Guidelines:
 - Function definitions are formatted as:
-  \`function_name(function_description): arg_1<type>(description), arg_2<type>(description), ..., arg_n<type>(description)->(response_description)\`
+  \`function_name(function_description): arg_1<type>(description), arg_2<type>(description), ..., arg_n<type>(description)->(response_description), response_param_1<type>(description), response_param_2<type>(description), ..., response_param_n<type>(description)\`
 - "!" before "arg_" is only to inform you that the argument is required, otherwise, they're optional. Do not include "!" in your function call.
 - Do not attempt to call functions that are not listed here. If there are no functions listed, do not call any functions.
 `;
@@ -353,10 +353,6 @@ const _baseOutputSchema = {
       "type": "string",
       "description": "Assistant message goes here",
     },
-    // "hasFollowUp": {
-    //   "type": "boolean",
-    //   "description": "If true, the agent will wait for the message from the user before continuing the conversation",
-    // },
     "nextTurn": {
       'type': 'string',
       'description': `Enum ['user', 'assistant']. Who is expected to send the next message.`

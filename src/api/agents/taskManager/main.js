@@ -71,14 +71,14 @@ const taskManager = async (
             console.log(`[taskManager] New task created: ${newTask._id}`);
             return newTask
         },
-        listCurrentWorkflowSteps: () => workflow.steps.map((step) => ({ name: step.name, description: step.description })),
-        getStepDetails: ({ name }) => {
-            const step = workflow.steps.find((step) => step.name === name);
-            if (!step) {
-                throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
-            }
-            return step;
-        },
+        // listCurrentWorkflowSteps: () => workflow.steps.map((step) => ({ name: step.name, description: step.description })),
+        // getStepDetails: ({ name }) => {
+        //     const step = workflow.steps.find((step) => step.name === name);
+        //     if (!step) {
+        //         throw new Error(`Step "${name}" not found in workflow "${workflow.name}"`);
+        //     }
+        //     return step;
+        // },
         submit: async (_args, onSubmit) => {
 
             const { _user, ...args } = _args;
@@ -138,7 +138,7 @@ const taskManager = async (
             const updatedTask = await models.tasks.update({ _id: taskDoc._id }, { currentStep: step._id });
             return { name: step.name, description: step.description, id: step._id };
         },
-        listWorkflows: () => allWorkflows.filter(Boolean).map(({ name, description }) => ({ name, description })),
+        // listWorkflows: () => allWorkflows.filter(Boolean).map(({ name, description }) => ({ name, description })),
         cancelTask: async () => {
             await models.tasks.update({ _id: taskDoc._id }, { status: 'cancelled' });
             return { message: 'Task cancelled' };
@@ -150,11 +150,11 @@ const taskManager = async (
     };
 
     const actionSpecs = {
-        listWorkflows: `(lists all workflows): ->(returns array of workflow names)`,
+        // listWorkflows: `(lists all workflows): ->(returns array of workflow names)`,
         createTask: `(creates a new task for a given workflow): !workflowName<string>(name of the workflow to start)->(returns task object)`,
         changeStep: `(changes the current step of the working task in current workflow): !stepName<string>(name of the step to change to)->(returns string 'step changed')`,
-        listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
-        getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
+        // listCurrentWorkflowSteps: `(lists all steps in the current workflow): ->(returns array of step names)`,
+        // getStepDetails: `(gets step details and instructions by name): !name<string>(name of the step)->(returns step instructions and details)`,
         cancelTask: `(cancels the current task): ->(returns string 'task cancelled')`,
         setState: `(sets a value for a given key in the task state): !key<string>(key to set), !value<any>(value to set)->(returns string 'context updated')`,
         submit: `(submits current step): <any>(JSON object to be stored in task context for future references)->(returns step submission results)`,
