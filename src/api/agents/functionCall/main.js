@@ -351,7 +351,7 @@ const _baseOutputSchema = {
   "properties": {
     "message": {
       "type": "string",
-      "description": "Assistant message goes here",
+      "description": "Assistant message goes here. This is what the user will see. Unless otherwise specified, leave it blank when calling a function.",
     },
     "nextTurn": {
       'type': 'string',
