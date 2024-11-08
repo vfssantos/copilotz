@@ -33,6 +33,7 @@ const functionCall = async (
   let actions = {};
   actionModules = actionModules || {};
 
+
   // 1. Extract Modules, Resources, Utils, and Dependencies
   const { modules, resources, utils, env } = functionCall;
 
@@ -133,7 +134,7 @@ const functionCall = async (
   // 6. Get Thread Logs
   console.log(`[functionCall] Fetching thread history`);
   if (!threadLogs || !threadLogs?.length) {
-    const lastLog = await`` getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
+    const lastLog = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
     if (lastLog) {
       const { prompt, ...agentResponse } = lastLog;
       threadLogs = prompt || [];
