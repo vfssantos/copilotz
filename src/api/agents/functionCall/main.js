@@ -35,7 +35,9 @@ const functionCall = async (
 
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { modules, resources, utils, env } = functionCall;
+  const { modules, resources, utils, env } = this || functionCall;
+
+  const { actionExecutor, agents } = modules;
 
   // 1.1 Extract Utils
   const { createPrompt, _, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
@@ -55,41 +57,23 @@ const functionCall = async (
   if (copilotz?.actions?.length) {
     console.log(`[functionCall] Processing ${copilotz.actions.length} actions`);
 
-    // 2.1. For each action available:
-    const actionsArray = await Promise.all(
+    // 2.1. Execute actions
+    const actionsObj = (await Promise.all(
       copilotz.actions.map(async (_action) => {
-        console.log(`[functionCall] Processing action: ${_action.specType}`);
-        const [specParser, actionModule] = await Promise.all([
-          // 2.1. Get action spec parser
-          import(new URL(`../../_specParser/${_action.specType}`, import.meta.url)).then((module) => module.default),
-          // 2.2. Get action module
-          _action.moduleUrl?.startsWith('http')
-            ? import(_action.moduleUrl).then((module) => module.default)
-            : _action.moduleUrl?.startsWith('native:')
-              ? import(new URL(`../../modules/${_action.moduleUrl.slice(7)}`, import.meta.url)).then((module) => module.default)
-              : { error: true, status: 400, message: `Invalid Module URL: namespace for ${_action.moduleUrl} not found. Should either start with 'http:', 'https:', or 'native:'.` },
-        ]);
-
-        // 2.3. Check for errors
-        if (actionModule.error) throw actionModule;
-
-        // 2.4. Add current dependencies to actionModule and specParser
-        Object.assign(actionModule, functionCall);
-        Object.assign(specParser, functionCall);
-
-        // 2.5. Parse spec
-        const action = specParser({ spec: _action.spec, module: actionModule });
+        const action = await actionExecutor({
+          specs: _action.spec,
+          specType: _action.specType,
+          module: _action.moduleUrl
+        })
         return action;
       })
-    );
+    )) // 2.2. Merge actions
+      .reduce((acc, obj) => {
+        Object.assign(acc, obj);
+        return acc;
+      }, {})
 
-    // 2.6. Reduce actionsArray to actionsObj
-    const actionsObj = actionsArray.reduce((acc, obj) => {
-      Object.assign(acc, obj);
-      return acc;
-    }, {});
-
-    // 2.7. Expand and merge to dot notation;
+    // 2.2. Expand and merge to dot notation;
     actions = getDotNotationObject(actionsObj);
   }
 
@@ -147,7 +131,7 @@ const functionCall = async (
 
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);
-  const chatAgent = modules.agents.chat;
+  const chatAgent = agents.chat;
   Object.assign(chatAgent, functionCall);
   const chatAgentResponse = await chatAgent(
     {
@@ -306,9 +290,13 @@ const functionCall = async (
 export default functionCall;
 
 const promptTemplate = `
+{{copilotPrompt}}
+================
 {{functionCallsPrompt}}
 ================
 {{responseFormatPrompt}}
+================
+{{currentDatePrompt}}
 ================
 `;
 

@@ -1,6 +1,7 @@
 import * as agents from './agents/main.js';
 import * as ai from './ai/main.js';
 import * as payments from './payments/main.js';
+import actionExecutor from './actions/main.js';
 
 export default (shared: any) => {
 
@@ -27,7 +28,8 @@ export default (shared: any) => {
     modules: {
       agents,
       ai,
-      payments
+      payments,
+      actionExecutor
     }
   }
 }

@@ -1,7 +1,9 @@
 import YAML from "npm:yaml";
 import validate from 'axion-modules/connectors/validator.ts';
+import jsonSchema from '../json-schema/main.js';
 
-const ParseOpenApiSpec = ({ spec, module: request }) => {
+
+const ParseOpenApiSpec = ({ spec, module: request, ...tool }) => {
 
   const { parse } = YAML;
 
@@ -33,20 +35,26 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
 
       const schema = { body: {}, query: {} };
 
+      let bodyProperties = {}
+      let queryParameters;
+
       // Adding POST / JSON params
       if (details.requestBody && details.requestBody.content) {
         const content = details.requestBody.content["application/json"];
         if (content && content.schema && content.schema.properties) {
-          Object.entries(content.schema.properties).forEach(
-            ([paramName, paramDetails]) => {
-              schema.body[paramName] = paramDetails.type + (paramDetails.required ? "!" : "");
-              args.push(
-                `${details.requestBody.required ? "!" : ""}${paramName}<${paramDetails.type}>(${paramDetails.description || ""})`,
-              );
-            },
-          );
+          bodyProperties = content.schema.properties;
+          // Object.entries(content.schema.properties).forEach(
+          //   ([paramName, paramDetails]) => {
+          //     // schema.body[paramName] = paramDetails.type + (paramDetails.required ? "!" : "");
+          //     args.push(
+          //       `${details.requestBody.required ? "!" : ""}${paramName}<${paramDetails.type}>(${paramDetails.description || ""})`,
+          //     );
+          //   },
+          // );
         }
       }
+
+
 
       // Adding Query Params
       parameters.forEach((param) => {
@@ -58,6 +66,12 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
         schema.query[paramName] = param.type + (param.required ? "!" : "");
       });
 
+      const queryParameters = parameters.reduce((acc, param) => {
+        const { name, ...paramDetails } = param
+        acc[name] = paramDetails
+        return acc
+      }, {})
+
       const formattedArgs = args.join(", ");
 
       // Combine all the parts
@@ -68,7 +82,7 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
           responseParams.push(`${paramName}<${paramDetails.type}>(${paramDetails.description})`);
         });
       }
-      
+
       const responseParamsStr = responseParams.length ? `${responseParams.join(",")}` : "";
       const spec = `(${summary}):${formattedArgs}->(${responses["200"].description})${responseParamsStr}`;
 
@@ -87,11 +101,11 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
 
   const auth = {};
   // get auth specs
-  components?.securitySchemes?.forEach((_scheme) => {
-    const { type, name, flows, description, scheme, in: location } = _scheme;
+  components?.securitySchemes && Object.entries(components.securitySchemes).forEach(([key, data]) => {
+    const { type, name, flows, description, scheme, in: location } = data;
     if (type === "http" && scheme === "bearer") {
       auth.type = "bearer";
-      auth.actionName = tool?.auth?.loginOperationId;
+      auth.actionName = tool?.auth?.loginOperationId || 'login';
     }
     else if (type === "http" && scheme === "basic") {
       auth.type = "basic";
@@ -104,8 +118,8 @@ const ParseOpenApiSpec = ({ spec, module: request }) => {
   });
 
   const getBearerToken = async () => {
-    const loginAction = actions[tool?.auth?.loginOperationId];
-    const token = await loginAction(tool?.auth?.credentials).then(res => res?.[tool?.auth?.[tokenPath]]);
+    const loginAction = actions[tool?.[auth?.loginOperationId] || 'login'];
+    const token = await loginAction(tool?.auth?.credentials).then(res => res?.[tool?.auth?.tokenPath || 'access_token']);
     return token;
   };
 
