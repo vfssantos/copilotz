@@ -1,1 +1,0 @@
-export { default as openapi3YAML } from "./openapi3-yaml/main.js";

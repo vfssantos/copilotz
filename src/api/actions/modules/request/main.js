@@ -12,6 +12,8 @@
 
 async function request(params) {
 
+    console.log('request', params);
+
     // const { url, method, headers = {}, body, queryParams = {}, pathParams = {} } = this;
     const { schemas, options, config } = this || {};
     // Substitute pathParams in URL
@@ -22,6 +24,7 @@ async function request(params) {
     const data = {};
     schemas.forEach(({ key, validator }) => ['body', 'query', 'path', 'headers'].includes(key) && (data[key] = validator(params)));
 
+    console.log('schemas', schemas);
     // Substitute pathParams in URL
     data.path && Object.keys(data.path).forEach(key => {
         url = url.replace(`:${key}`, data.path[key]);
@@ -32,6 +35,8 @@ async function request(params) {
     if (queryString) {
         url += `?${queryString}`;
     }
+
+    console.log('data', data);
 
     // Configure request options
     const fetchOptions = {

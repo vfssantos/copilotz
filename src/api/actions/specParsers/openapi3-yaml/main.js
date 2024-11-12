@@ -134,7 +134,6 @@ const ParseOpenApiSpec = ({ specs, ...tool }) => {
       }, {});
 
       const outputSpec = jsonSchemaToFunctionSpec({ ...outputObject, description: outputDescription });
-      console.log(outputSpec);
 
       const spec = `(${summary})${inputSpec}->${outputSpec}`;
       action.spec = spec;

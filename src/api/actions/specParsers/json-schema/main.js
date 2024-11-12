@@ -99,17 +99,24 @@ function jsonSchemaToShortSchema(jsonSchema, { detailed } = {}) {
             const isRequired = required.includes(key);
             const suffix = isRequired ? '!' : '?';
             const description = detailed && prop.description ? ` ${prop.description}` : '';
+            
             if (type === 'object' && prop.properties) {
                 result[key] = formatProperties(prop.properties, prop.required);
             } else if (type === 'array' && prop.items) {
-                result[key] = [formatProperties(prop.items.properties, prop.items.required)];
+                // Handle array items based on their type
+                if (prop.items.type === 'object' && prop.items.properties) {
+                    result[key] = [formatProperties(prop.items.properties, prop.items.required)];
+                } else {
+                    // For primitive types in arrays
+                    result[key] = [convertType(prop.items.type)];
+                }
             } else {
                 result[key] = description ? `<${type + suffix}>${description}</${type + suffix}>` : type + suffix;
             }
         }
         return result;
     }
-
+    
     return formatProperties(jsonSchema.properties, jsonSchema.required);
 }
 
