@@ -1,5 +1,5 @@
 
-const shortSchema = async ({ schema, module }) => {
+async function shortSchema({ schema, module }) {
     const fn = async (data) => {
         const result = await module(data)
         return result;

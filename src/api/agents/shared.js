@@ -113,17 +113,17 @@ const mentionsExtractor = ({ input }) => {
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
-const getThreadHistory = async (threadId, { functionName, maxRetries, toAppend }) => {
+async function getThreadHistory(threadId, { functionName, maxRetries, toAppend }) {
 
   console.log(`[getThreadHistory] Getting thread history for ${threadId} with functionName ${functionName}`);
 
-  const { models } = getThreadHistory;
+  const { models } = this;
 
   maxRetries = maxRetries || 10;
 
   // 1.1. If Last Log Exists, Add to Chat Logs
   const lastLog = (await models.logs.find({
-    "name": functionName,
+    "name": functionName, 
     "input.0.thread.extId": threadId,
     "status": "completed",
     "hidden": null,
@@ -141,13 +141,12 @@ const getThreadHistory = async (threadId, { functionName, maxRetries, toAppend }
 }
 
 export default (shared) => {
-  Object.assign(getThreadHistory, { models: shared.models })
   return {
     ...shared,
     utils: {
       ...shared?.utils,
       createPrompt,
-      getThreadHistory,
+      getThreadHistory: getThreadHistory.bind(shared),
       mentionsExtractor,
       jsonSchemaToShortSchema,
       mergeSchemas,

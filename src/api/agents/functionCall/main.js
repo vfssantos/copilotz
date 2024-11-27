@@ -34,7 +34,7 @@ async function functionCall(
   actionModules = actionModules || {};
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { modules, resources, utils, env } = this ? this : functionCall;
+  const { modules, resources, utils, env } = this || functionCall;
 
   const { actionExecutor, agents } = modules;
 

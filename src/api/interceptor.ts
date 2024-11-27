@@ -15,15 +15,16 @@ function sanitizeObject(obj: any): any {
     );
 }
 
-export const beforeRun = ({ name, url, requestId, executionId, input, properties }: {
+async function beforeRun({ name, url, requestId, executionId, input, properties }: {
     name: string;
     url: string;
     requestId: string;
     executionId: string;
     input: any;
     properties: any;
-}) => {
-    const { models } = beforeRun as any;
+}) {
+
+    const { models } = this;
     if (models?.logs) {
         const sanitizedInput = sanitizeObject({ ...input })
         models.logs.create({
@@ -37,7 +38,7 @@ export const beforeRun = ({ name, url, requestId, executionId, input, properties
     return
 }
 
-export const afterRun = ({ name, url, requestId, status, executionId, output, duration, properties }: {
+async function afterRun({ name, url, requestId, status, executionId, output, duration, properties }: {
     name: string;
     url: string;
     requestId: string;
@@ -46,8 +47,9 @@ export const afterRun = ({ name, url, requestId, status, executionId, output, du
     output: any;
     duration: number;
     properties: any;
-}) => {
-    const { models } = afterRun as any;
+}) {
+
+    const { models } = this;
     if (models?.logs) {
         // check if output is an Error
         if (output instanceof Error) {
@@ -66,3 +68,4 @@ export const afterRun = ({ name, url, requestId, status, executionId, output, du
     return
 }
 
+export { beforeRun, afterRun }
