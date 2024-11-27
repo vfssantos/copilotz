@@ -6,7 +6,7 @@ import validate, { getDotNotationObject } from "axion-modules/connectors/validat
 // Define Configs
 const maxIter = 5;
 
-const functionCall = async (
+async function functionCall(
   {
     threadLogs,
     outputSchema,
@@ -25,7 +25,7 @@ const functionCall = async (
     iterations = 0,
   },
   res
-) => {
+) {
   agentType = agentType || 'functionCall';
 
   console.log(`[functionCall] Starting iteration ${iterations}`);
@@ -33,9 +33,8 @@ const functionCall = async (
   let actions = {};
   actionModules = actionModules || {};
 
-
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { modules, resources, utils, env } = this || functionCall;
+  const { modules, resources, utils, env } = this ? this : functionCall;
 
   const { actionExecutor, agents } = modules;
 
@@ -132,8 +131,7 @@ const functionCall = async (
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);
   const chatAgent = agents.chat;
-  Object.assign(chatAgent, functionCall);
-  const chatAgentResponse = await chatAgent(
+  const chatAgentResponse = await chatAgent.bind(this)(
     {
       threadLogs,
       answer,
@@ -264,7 +262,7 @@ const functionCall = async (
         });
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-        return await functionCall(
+        return await functionCall.bind(this)(
           {
             input: '',
             actionModules,

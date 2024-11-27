@@ -1,8 +1,8 @@
 import formatChat, { tokenCounter } from '../helpers.js';
 
-const openAiChat = async (chat, stream = () => { }) => {
+async function openAiChat(chat, stream = () => { }) {
 
-  const { config, env } = openAiChat;
+  const { config, env } = this;
   const messages = formatChat({ ...chat, config });
 
   if (chat.answer) {

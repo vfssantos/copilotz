@@ -25,7 +25,7 @@ import validate from "axion-modules/connectors/validator.ts";
  * @returns {Promise<Object>} - Returns a Promise that resolves with the response object.
  */
 
-const chatAgent = async (
+async function chatAgent(
     {
         instructions,
         input,
@@ -42,7 +42,7 @@ const chatAgent = async (
         options,
     },
     res
-) => {
+) {
     agentType = agentType || 'chat';
 
     console.log(`[chatAgent] Starting chat agent`);
@@ -56,7 +56,7 @@ const chatAgent = async (
         resources,
         utils,
         env,
-    } = chatAgent;
+    } = this || chatAgent;
 
     // 1.1 Extract Utils
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema } = utils;
@@ -112,8 +112,7 @@ const chatAgent = async (
     if (audio) {
         console.log(`[chatAgent] Audio input detected, starting transcription`);
         const transcriber = agents.transcriber;
-        Object.assign(transcriber, chatAgent);
-        const { message: transcribedText } = await transcriber({
+        const { message: transcribedText } = await transcriber.bind(this)({
             audio,
             instructions,
             agentType,
@@ -149,11 +148,7 @@ const chatAgent = async (
     const { provider, ...providerOptions } = config?.AI_CHAT_PROVIDER || {
         provider: 'openai',
     }; // use openai as default provider
-    const aiChat = ai.chat[provider];
-
-    // 7. Execute AI Chat
-    // 7.1. Assign configuration to AI Chat
-    Object.assign(aiChat, {
+    const aiChat = ai.chat[provider].bind({
         __requestId__,
         config: {
             ...providerOptions,
@@ -163,6 +158,9 @@ const chatAgent = async (
         },
         env,
     });
+
+    // 7. Execute AI Chat
+    // 7.1. Assign configuration to AI Chat
 
     // 7.2. Execute AI Chat
     console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);

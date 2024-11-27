@@ -1,6 +1,6 @@
 import formatChat, { tokenCounter } from '../helpers.js';
 
-export default ({ config, env, ...rest }) => {
+export default function groqChat({ config, env, ...rest }) {
   return async (chat, stream = () => { }) => {
 
     const messages = formatChat({ ...chat, config });

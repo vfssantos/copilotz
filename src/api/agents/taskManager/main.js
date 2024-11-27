@@ -3,10 +3,10 @@ import validate from "axion-modules/connectors/validator.ts";
 
 const maxIter = 3;
 
-const taskManager = async (
+async function taskManager(
     { answer, threadLogs, instructions, input, audio, user, thread, options, iterations = 0, outputSchema, overrideBaseOutputSchema, agentType },
     res
-) => {
+) {
     console.log(`[taskManager] Starting iteration ${iterations}`);
 
     agentType = agentType || 'taskManager';
@@ -16,7 +16,7 @@ const taskManager = async (
     let taskDoc;
 
     // Extract Dependencies
-    const { models, modules, resources, utils } = taskManager;
+    const { models, modules, resources, utils } = this;
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
     const { agents } = modules;
 
@@ -184,12 +184,22 @@ const taskManager = async (
             submitWhen,
         } = currentStep;
 
-        copilotz.actions = [
+        // Combine actions and ensure uniqueness by action ID
+        const uniqueActionsMap = new Map();
+        
+        [
             ...(copilotz.actions || []),
             ...(copilotz?.job?.actions || []),
             ...(currentStep?.actions || []),
             (currentStep?.onSubmit || null),
-        ].filter(Boolean);
+        ]
+        .filter(Boolean)
+        .forEach(action => {
+            uniqueActionsMap.set(action._id.toString(), action);
+        });
+
+        copilotz.actions = Array.from(uniqueActionsMap.values());
+        resources.copilotz = copilotz;
 
         // 3. Create Instructions
         const taskManagerPrompt = createPrompt(currentTaskPromptTemplate, {
@@ -228,10 +238,9 @@ const taskManager = async (
     }
 
     const functionCallAgent = agents.functionCall;
-    Object.assign(functionCallAgent, taskManager);
 
     console.log(`[taskManager] Calling functionCall agent`);
-    const functionCallAgentResponse = await functionCallAgent(
+    const functionCallAgentResponse = await functionCallAgent.bind(this)(
         {
             actionModules,
             instructions,
@@ -279,7 +288,7 @@ const taskManager = async (
         iterations < maxIter
     ) {
         console.log(`[taskManager] Recursively calling taskManager for next step`);
-        return await taskManager(
+        return await taskManager.bind(this)(
             {
                 input: '',
                 actionModules,
