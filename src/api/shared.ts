@@ -4,21 +4,6 @@ import actionExecutor from './actions/main.js';
 
 export default (shared: any) => {
 
-  // Set up default stripe payment
-  const paymentsConfig = {
-    apiKey: shared.env.STRIPE_API_KEY,
-  }
-
-  const deepAssign = (obj: any, config: any) => {
-    Object.keys(obj).forEach((key) => {
-      if (typeof obj[key] === 'object' && obj[key] !== null) {
-        deepAssign(obj[key], config);
-      } else {
-        Object.assign(obj[key], config);
-      }
-    });
-  }
-
   return {
     ...shared,
     modules: {

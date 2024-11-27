@@ -1,20 +1,22 @@
-const GET = async ({ resource, id, _populate }) => {
+async function GET ({ resource, id, _populate }) {
     id = Number(id);
-    const { models } = GET;
+    const { models } = this;
     if (!id) throw { message: 'Missing required fields: id' };
     if (!models?.[resource]) throw { message: 'Resource not found', status: 404 };
     return await models?.[resource]?.findOne({ _id: id }, { populate: _populate?.split(',') });
 }
-const PUT = async ({ resource, id, ...data }) => {
+
+async function PUT ({ resource, id, ...data }) {
     id = Number(id);
-    const { models } = PUT;
+    const { models } = this;
     if (!id) throw { message: 'Missing required fields: id' };
     if (!models?.[resource]) throw { message: 'Resource not found', status: 404 };
     return await models?.[resource]?.update({ _id: id }, { ...data });
 }
-const DELETE = async ({ resource, id }) => {
+
+async function DELETE ({ resource, id }) {
     id = Number(id);
-    const { models } = DELETE;
+    const { models } = this;
     if (!id) throw { message: 'Missing required fields: id' };
     if (!models?.[resource]) throw { message: 'Resource not found', status: 404 };
     await models?.[resource]?.delete({ _id: id });

@@ -1,14 +1,14 @@
-const GET = async ({ resource, _populate, ...queryParams }) => {
-    const { models } = GET;
+async function GET ({ resource, _populate, ...queryParams }) {
+    const { models } = this;
     if (!models?.[resource]) throw { message: 'Resource not found', status: 404 };
     return {
         data: (await models?.[resource]?.find(queryParams, { populate: _populate?.split(',') })) || []
     }
 };
-const POST = ({ resource, ...data }) => {
-    const { models } = POST;
+async function POST ({ resource, ...data }) {
+    const { models } = this;
     if (!models?.[resource]) throw { message: 'Resource not found', status: 404 };
-    return models?.[resource]?.create(data);
+    return await models?.[resource]?.create(data);
 };
 
 export {
