@@ -119,7 +119,7 @@ async function request(params) {
             if (typeof resBody === 'string' && isBase64(resBody)) {
                 return { __media__: { [new URL(url).pathname]: resBody } };
             }
-            return { data: resBody };
+            return resBody
         }
 
     } catch (error) {
