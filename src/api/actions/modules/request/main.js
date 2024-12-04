@@ -9,6 +9,53 @@
  * outputSchema: {body, status}
  */
 
+// Add these utility functions at the top of the file
+function isBase64(str) {
+    // Check if value is string and has minimum requirements for base64
+    if (typeof str !== 'string') return false;
+    if (str.length < 8) return false; // Minimum viable length for data URL
+    if (!str.startsWith('data:')) return false;
+
+    const dataUrlRegex = /^data:([a-z]+\/[a-z0-9-+.]+)?;base64,(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+    try {
+        return dataUrlRegex.test(str);
+    } catch {
+        return false;
+    }
+}
+
+function extractBase64Content(obj, path = '', result = {}, original = obj) {
+    // Handle null or undefined
+    if (obj == null) return result;
+
+    if (Array.isArray(obj)) {
+        obj.forEach((item, index) => {
+            const newPath = path ? `${path}.${index}` : `${index}`;
+            extractBase64Content(item, newPath, result, original);
+        });
+    } else if (typeof obj === 'object' && obj !== null) {
+        Object.entries(obj).forEach(([key, value]) => {
+            const newPath = path ? `${path}.${key}` : key;
+            extractBase64Content(value, newPath, result, original);
+        });
+    } else if (isBase64(obj)) {
+        result[path] = obj;
+
+        // Remove the base64 content from the original object
+        const pathParts = path.split('.');
+        let current = original;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            current = current[pathParts[i]];
+        }
+        const lastPart = pathParts[pathParts.length - 1];
+        if (Array.isArray(current)) {
+            current.splice(parseInt(lastPart), 1);
+        } else {
+            delete current[lastPart];
+        }
+    }
+    return result;
+}
 
 async function request(params) {
 
@@ -54,9 +101,26 @@ async function request(params) {
         let res;
         try {
             res = JSON.parse(resBody);
-        } catch (_) { }
 
-        return res;
+            // Extract base64 content if response is parsed successfully
+            const base64Content = {};
+            if (res) {
+                extractBase64Content(res, '', base64Content, res);
+            }
+
+            // Return both the cleaned response and base64 content
+            return {
+                ...res,
+                __media__: Object.keys(base64Content).length > 0 ? base64Content : undefined
+            };
+
+        } catch (_) {
+            // if response is string, check for data url and extract media
+            if (typeof resBody === 'string' && isBase64(resBody)) {
+                return { __media__: { [new URL(url).pathname]: resBody } };
+            }
+            return { data: resBody };
+        }
 
     } catch (error) {
         console.error('Error processing request:', error, {
@@ -72,3 +136,5 @@ async function request(params) {
 };
 
 export default request;
+
+

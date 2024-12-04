@@ -1,106 +1,230 @@
-import { assertEquals, assertObjectMatch } from "jsr:@std/assert";
-import { delay } from "jsr:@std/async";
+import { assertEquals, assertExists, assertObjectMatch } from "jsr:@std/assert";
 import actionExecutor from "./main.js";
 
-// Move the OpenAPI spec to a separate fixture file and import it
-const specs = "openapi: 3.0.0\ninfo:\n  title: Bus Booking API\n  version: 1.0.0\n  description: API for searching and booking bus trips between cities\n\nservers:\n  - url: https://mobizap-api.jaze.ai\n    description: Development server\n  - url: https://mobizap-api.comporte.com.br\n    description: Production server\n\npaths:\n  /features/startSession:\n    post:\n      operationId: startSession\n      summary: Initialize a new session\n      description: Creates a new session and retrieves necessary cookies for subsequent requests\n      responses:\n        '200':\n          description: Session created successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  sessionId:\n                    type: string\n                    description: Unique session identifier to be used in subsequent requests\n                    example: \"550e8400-e29b-41d4-a716-446655440000\"\n  /features/checkRoute:\n    post:\n      operationId: checkRoute\n      summary: Check available routes between origin and destination\n      description: Validates and retrieves route information between two cities\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n                - origin\n                - destination\n              properties:\n                sessionId:\n                  type: string\n                  description: Unique identifier for the user's session\n                  example: \"123\"\n                origin:\n                  type: string\n                  description: Name of the departure city\n                  example: \"são pedro\"\n                destination:\n                  type: string\n                  description: Name of the arrival city\n                  example: \"Piracicaba\"\n      responses:\n        '200':\n          description: Route found successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  origin:\n                    type: object\n                    description: Details about the departure location\n                    properties:\n                      id: \n                        type: string\n                        description: Unique identifier for the origin city\n                      name:\n                        type: string\n                        description: Full name of the origin city\n                      uf:\n                        type: string\n                        description: State/province code where the origin city is located\n                  destination:\n                    type: object\n                    description: Details about the arrival location\n                    properties:\n                      id:\n                        type: string\n                        description: Unique identifier for the destination city\n                      name:\n                        type: string\n                        description: Full name of the destination city\n                      uf:\n                        type: string\n                        description: State/province code where the destination city is located\n        '404':\n          description: No route found between the specified cities\n\n  /features/searchTrips:\n    post:\n      operationId: searchTrips\n      summary: Search for available trips\n      description: Searches for bus trips based on route and preferences\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - date\n                - sessionId\n              properties:\n                date:\n                  type: string\n                  format: date\n                  description: Travel date in DD-MM-YYYY format\n                  example: \"09-11-2024\"\n                sessionId:\n                  type: string\n                  description: Unique identifier for the user's session\n                preferences:\n                  type: object\n                  description: Optional filtering preferences for the search\n                  properties:\n                    period:\n                      type: string\n                      description: Preferred time of day for travel\n                      enum: [soonest, morning, afternoon, evening, night, any]\n                    class:\n                      type: string\n                      description: Preferred bus service class\n                      enum: [bed, executive, regular, any]\n                    connections:\n                      type: string\n                      description: Preferred number of connections\n                      enum: [direct, one, two, any]\n                    speed:\n                      type: string\n                      description: Preference for journey duration\n                      enum: [fastest, fast, any]\n                    price:\n                      type: string\n                      description: Price range preference\n                      enum: [lowest, promotions, low, medium, high, any]\n      responses:\n        '200':\n          description: Trips found successfully\n          content:\n            application/json:\n              schema:\n                type: array\n                items:\n                  type: object\n                  properties:\n                    companyName:\n                      type: string\n                      description: Name of the bus company\n                    classes:\n                      type: array\n                      description: Available service classes for this company\n                      items:\n                        type: object\n                        properties:\n                          className:\n                            type: string\n                            description: Type of service class (e.g., executive, regular)\n                          trips:\n                            type: array\n                            description: List of available trips for this class\n                            items:\n                              type: object\n                              properties:\n                                id:\n                                  type: number\n                                  description: Unique identifier for the trip\n                                price:\n                                  type: number\n                                  description: Trip fare in local currency\n                                arrival:\n                                  type: string\n                                  description: Arrival time in HH:mm format\n                                departure:\n                                  type: string\n                                  description: Departure time in HH:mm format\n                                connection:\n                                  type: boolean\n                                  description: Whether the trip has connections\n\n  /features/selectTrip:\n    post:\n      operationId: selectTrip\n      summary: Select a specific trip\n      description: Reserves a specific trip for the booking process\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n                - tripId\n              properties:\n                sessionId:\n                  type: string\n                  description: Unique identifier for the user's session\n                tripId:\n                  type: number\n                  description: ID of the selected trip\n      responses:\n        '200':\n          description: Trip selected successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  company:\n                    type: string\n                    description: Name of the bus company\n                  departure:\n                    type: string\n                    description: Departure time in HH:mm format\n                  arrival:\n                    type: string\n                    description: Arrival time in HH:mm format\n                  class:\n                    type: string\n                    description: Service class of the selected trip\n        '404':\n          description: Trip not found\n  /features/getSeats:\n    post:\n      operationId: getSeats\n      summary: Get available seats for a selected trip\n      description: Retrieves and optionally filters available seats based on preferences\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n              properties:\n                sessionId:\n                  type: string\n                  description: Unique identifier for the user's session\n                preferences:\n                  type: object\n                  description: Optional seat filtering preferences\n                  properties:\n                    seatType:\n                      type: string\n                      description: Preferred position within the row\n                      enum: [window, aisle, middle]\n                    side:\n                      type: string\n                      description: Preferred side of the bus\n                      enum: [left, right]\n                    position:\n                      type: string\n                      description: Preferred position in the bus\n                      enum: [front, middle, back]\n                    isDouble:\n                      type: boolean\n                      description: Whether the seat should have an adjacent available seat\n                    numbers:\n                      type: array\n                      description: Specific seat numbers to filter by\n                      items:\n                        type: number\n                      example: [1, 2, 3]\n      responses:\n        '200':\n          description: Seats retrieved successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  allSeats:\n                    type: array\n                    description: Complete seat map of the bus\n                    items:\n                      type: array\n                      description: Row of seats\n                      items:\n                        type: string\n                        description: Seat identifier ('X' for unavailable, 'C' for corridor, or seat number)\n                    example: [\n                      [\"01\", \"02\", \"C\", \"03\", \"04\"],\n                      [\"05\", \"X\", \"C\", \"07\", \"08\"]\n                    ]\n                  preferredSeats:\n                    type: array\n                    description: Filtered list of seats matching preferences\n                    items:\n                      type: string\n                      description: Seat number\n                    example: [\"01\", \"04\", \"08\"]\n        '404':\n          description: Session not found or invalid\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/Error'\n  /features/selectSeats:\n    post:\n      operationId: selectSeats\n      summary: Select seats for a trip\n      description: Attempts to reserve specific seats for the selected trip\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n                - seats\n              properties:\n                sessionId:\n                  type: string\n                  description: Unique identifier for the user's session\n                seats:\n                  type: array\n                  description: List of seat numbers to reserve\n                  items:\n                    type: string\n                  example: [\"01\", \"02\"]\n      responses:\n        '200':\n          description: Seats selected successfully\n          content:\n            application/json:\n              schema:\n                type: array\n                description: Array of seat reservation confirmations\n                items:\n                  type: object\n                  description: Seat reservation details\n  /features/setBuyer:\n    post:\n      operationId: setBuyer\n      summary: Set or create buyer information\n      description: Registers the buyer for the transaction, creating a new profile if not found\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n                - email\n              properties:\n                sessionId:\n                  type: string\n                  description: Active session identifier\n                email:\n                  type: string\n                  format: email\n                  description: Buyer's email address\n                  example: \"john.doe@example.com\"\n      responses:\n        '200':\n          description: Buyer information set successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  customerNumber:\n                    type: string\n                    description: Unique customer identifier\n                  profile:\n                    type: object\n                    properties:\n                      fullName:\n                        type: string\n                      email:\n                        type: string\n                      phone:\n                        type: string\n                      CPF:\n                        type: string\n                      docType:\n                        type: string\n                  userType:\n                    type: string\n                    enum: [REGISTERED, NOT_REGISTERED]\n                    description: Indicates if the buyer was previously registered\n  /features/setPassengers:\n    post:\n      operationId: setPassengers\n      summary: Set passenger information for the trip\n      description: Registers passenger details for each selected seat\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n                - passengers\n              properties:\n                sessionId:\n                  type: string\n                  description: Active session identifier\n                passengers:\n                  type: array\n                  description: List of passengers for the trip\n                  items:\n                    type: object\n                    required:\n                      - name\n                      - cpf\n                      - birthDate\n                    properties:\n                      name:\n                        type: string\n                        description: Passenger's full name\n                      cpf:\n                        type: string\n                        description: Passenger's CPF (Brazilian tax ID)\n                        pattern: ^d{3}.d{3}.d{3}-d{2}$\n                      birthDate:\n                        type: string\n                        format: date\n                        description: Passenger's birth date in YYYY-MM-DD format\n      responses:\n        '200':\n          description: Passengers registered successfully\n          content:\n            application/json:\n              schema:\n                type: array\n                items:\n                  type: object\n                  properties:\n                    uuid:\n                      type: string\n                    passengerName:\n                      type: string\n                    seatNumber:\n                      type: string\n\n  /features/getPayment:\n    post:\n      operationId: getPayment\n      summary: Initialize payment process\n      description: Creates a payment request for the booking\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n              properties:\n                sessionId:\n                  type: string\n                  description: Active session identifier\n                buyerName:\n                  type: string\n                  description: Optional - Override stored buyer name\n                buyerPhone:\n                  type: string\n                  description: Optional - Override stored buyer phone\n                buyerDocumentNumber:\n                  type: string\n                  description: Optional - Override stored buyer document\n                buyerDocumentType:\n                  type: string\n                  enum: [cpf]\n                  description: Optional - Override stored document type\n                buyerCustomerNumber:\n                  type: string\n                  description: Optional - Override stored customer number\n      responses:\n        '200':\n          description: Payment initialized successfully\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  paymentId:\n                    type: string\n                  pixCode:\n                    type: string\n                    description: PIX payment code\n                  amount:\n                    type: number\n                    description: Payment amount\n                  expiresAt:\n                    type: string\n                    format: date-time\n\n  /features/checkPayment:\n    post:\n      operationId: checkPayment\n      summary: Check payment status\n      description: Polls payment status for up to 5 minutes\n      requestBody:\n        required: true\n        content:\n          application/json:\n            schema:\n              type: object\n              required:\n                - sessionId\n              properties:\n                sessionId:\n                  type: string\n                  description: Active session identifier\n      responses:\n        '200':\n          description: Payment status retrieved\n          content:\n            application/json:\n              schema:\n                type: object\n                properties:\n                  status:\n                    type: string\n                    enum: [PENDING, COMPLETED, EXPIRED, FAILED]\n                    description: Current payment status\n                  continuePooling:\n                    type: boolean\n                    description: Whether to continue checking the status\n                  message:\n                    type: string\n                    description: Additional status information\n\ncomponents:\n  schemas:\n    Error:\n      type: object\n      properties:\n        message:\n          type: string\n          description: Human-readable error description\n        code:\n          type: string\n          description: Machine-readable error code\n    SeatPreferences:\n      type: object\n      description: Available seat filtering options\n      properties:\n        seatType:\n          type: string\n          description: Position within the row\n          enum: [window, aisle, middle]\n        side:\n          type: string\n          description: Side of the bus\n          enum: [left, right]\n        position:\n          type: string\n          description: Position in the bus\n          enum: [front, middle, back]\n        isDouble:\n          type: boolean\n          description: Whether an adjacent seat should be available\n        numbers:\n          type: array\n          description: Specific seat numbers to filter by\n          items:\n            type: number\n    PaymentStatus:\n      type: object\n      properties:\n        status:\n          type: string\n          enum: [PENDING, COMPLETED, EXPIRED, FAILED]\n        continuePooling:\n          type: boolean\n        message:\n          type: string\n\n    PassengerInfo:\n      type: object\n      required:\n        - name\n        - cpf\n        - birthDate\n      properties:\n        name:\n          type: string\n        cpf:\n          type: string\n          pattern: ^d{3}.d{3}.d{3}-d{2}$\n        birthDate:\n          type: string\n          format: date\n"
+// OpenAPI spec combining weather API and image endpoints
+const specs = `
+openapi: 3.0.0
+info:
+  title: Test API
+  version: 1.0.0
+servers:
+  - url: https://api.example.com
+paths:
+  /weather:
+    get:
+      operationId: getWeather
+      summary: Get weather information
+      parameters:
+        - name: city
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Weather information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  temperature:
+                    type: number
+                  conditions:
+                    type: string
+                  city:
+                    type: string
+  /weather/forecast:
+    post:
+      operationId: getForecast
+      summary: Get weather forecast
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - city
+                - days
+              properties:
+                city:
+                  type: string
+                days:
+                  type: number
+      responses:
+        '200':
+          description: Weather forecast
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  forecast:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                        temperature:
+                          type: number
+                        conditions:
+                          type: string
+  /image:
+    get:
+      operationId: getImage
+      summary: Get a test image
+      responses:
+        '200':
+          description: Returns a test image
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  image:
+                    type: string
+                    description: Base64 encoded image
+                  name:
+                    type: string
+                    description: Image name
+  /binary-image:
+    get:
+      operationId: getBinaryImage
+      summary: Get a test image as binary
+      responses:
+        '200':
+          description: Returns a test image directly
+          content:
+            image/png:
+              schema:
+                type: string
+                format: binary
+`;
 
+// Mock responses
+const mockWeather = {
+  temperature: 25,
+  conditions: "Sunny",
+  city: "New York",
+};
+
+const mockForecast = {
+  forecast: [
+    { date: "2024-03-20", temperature: 25, conditions: "Sunny" },
+    { date: "2024-03-21", temperature: 23, conditions: "Partly Cloudy" },
+    { date: "2024-03-22", temperature: 20, conditions: "Rain" }
+  ]
+};
+
+const mockImage = {
+  image: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
+  name: "test.png"
+};
+
+// Test suite for weather API
 Deno.test({
-  name: "actionExecutor - should create functions from OpenAPI spec",
+  name: "actionExecutor - Weather API Tests",
   fn: async () => {
-    const functions = await actionExecutor({
-      specs,
-      specType: "openapi3_yaml",
-      module: "native:request",
-    });
-    assertEquals(typeof functions.checkRoute, "function");
+    // Mock fetch globally
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url, options = {}) => {
+      const urlObj = new URL(url);
+      const method = (options.method || 'GET').toUpperCase();
+      
+      // Route mock responses based on path and method
+      if (urlObj.pathname === '/weather' && method === 'GET') {
+        return new Response(JSON.stringify(mockWeather), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else if (urlObj.pathname === '/weather/forecast' && method === 'POST') {
+        return new Response(JSON.stringify(mockForecast), {
+          headers: { "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      
+      throw new Error(`Unhandled mock request: ${url} (${method})`);
+    };
+
+    try {
+      const functions = await actionExecutor({
+        specs,
+        specType: "openapi3_yaml",
+        module: "native:request",
+        config: {
+          baseUrl: "https://api.example.com"
+        }
+      });
+
+      // Test getWeather
+      const weather = await functions.getWeather({ city: "New York" });
+      assertObjectMatch(weather, mockWeather);
+
+      // Test getForecast
+      const forecast = await functions.getForecast({ 
+        city: "New York",
+        days: 3
+      });
+      assertObjectMatch(forecast, mockForecast);
+
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   }
 });
 
+// Test suite for image handling
 Deno.test({
-  name: "actionExecutor - checkRoute should validate route between cities",
+  name: "actionExecutor - Image Handling Tests",
   fn: async () => {
-
-    const fn = await actionExecutor({
-      specs,
-      specType: "openapi3_yaml",
-      module: "native:request",
-      config: {}
-    });
-
-    const session = await fn.startSession();
-
-    console.log('session', session);
-
-    const route = await fn.checkRoute({
-      origin: "São Paulo",
-      destination: "Curitiba",
-      sessionId: session.sessionId,
-      config: {}
-    });
-
-    console.log('route', route);
-
-    const trips = await fn.searchTrips({
-      date: "09-11-2024",
-      sessionId: session.sessionId,
-      preferences: {},
-      config: {}
-    });
-
-    console.log('trips', trips);
-
-    const trip = await fn.selectTrip({
-      tripId: 1,
-      sessionId: session.sessionId,
-      config: {}
-    });
-
-    console.log('trip', trip);
-
-    const seats = await fn.getSeats({
-      sessionId: session.sessionId,
-    });
-    console.log('seats', seats);
-
-    const booking = await fn.selectSeats({
-      sessionId: session.sessionId,
-      seats: [seats.allSeats.flat().find(seat => !['X', 'C'].includes(seat))]
-    });
-
-    console.log('booking', booking);
-
-    const buyer = await fn.setBuyer({
-      sessionId: session.sessionId,
-      email: "vfssantos@outlook.com"
-    });
-
-    const passengers = await fn.setPassengers({
-      sessionId: session.sessionId,
-      passengers: [{
-        name: "Vinicius Santos",
-        cpf: "416.713.027-93",
-        birthDate: "1992-08-27"
-      }]
-    });
-
-    console.log('passengers', passengers);
-
-    const payment = await fn.getPayment({
-      sessionId: session.sessionId,
-    });
-
-    assertObjectMatch(route, {
-      origin: {
-        id: "-3",
-        name: "SAO PAULO (TODOS) - SP",
-        uf: "SP",
-      },
-      destination: {
-        id: "-25",
-        name: "CURITIBA - PR",
-        uf: "PR",
+    // Mock fetch globally
+    const originalFetch = globalThis.fetch;
+    globalThis.fetch = async (url) => {
+      const urlObj = new URL(url);
+      
+      if (urlObj.pathname === '/image') {
+        return new Response(JSON.stringify(mockImage), {
+          headers: { "Content-Type": "application/json" },
+        });
+      } else if (urlObj.pathname === '/binary-image') {
+        return new Response(mockImage.image, {
+          headers: { "Content-Type": "image/png" },
+        });
       }
-    });
+      
+      throw new Error(`Unhandled mock request: ${url}`);
+    };
+
+    try {
+      const functions = await actionExecutor({
+        specs,
+        specType: "openapi3_yaml",
+        module: "native:request",
+        config: {
+          baseUrl: "https://api.example.com"
+        }
+      });
+
+      // Test JSON response with embedded image
+      const imageResult = await functions.getImage();
+      assertExists(imageResult.__media__, "Media should be extracted");
+      assertEquals(imageResult.__media__.image, mockImage.image, "Image data should match");
+      assertEquals(imageResult.name, mockImage.name, "Non-media properties should be preserved");
+
+      // Test direct binary image response
+      const binaryResult = await functions.getBinaryImage();
+      assertExists(binaryResult.__media__, "Media should be extracted");
+      assertEquals(
+        binaryResult.__media__["/binary-image"],
+        mockImage.image,
+        "Binary image should be stored with path as key"
+      );
+
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   }
 });

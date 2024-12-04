@@ -149,6 +149,7 @@ async function functionCall(
 
   let functionAgentResponse = {};
 
+  
   // 8. Validate and Format Output
   if (chatAgentResponse?.message) {
     console.log(`[functionCall] Validating and formatting output`);
@@ -227,9 +228,15 @@ async function functionCall(
           func.status = 'pending';
           try {
             console.log(`[functionCall] Executing function: ${func.name}`);
-            const actionResult = await Promise.resolve(action({ ...func.args, _user: user }));
+            const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
+            if (typeof actionResponse === 'object' && actionResponse.__media__) {
+              const { __media__, ...actionResult } = actionResponse;
+              func.results = actionResult;
+              functionAgentResponse.media = __media__;
+            } else {
+              func.results = actionResponse || { message: 'function call returned `undefined`' };
+            }
             func.status = 'ok';
-            func.results = actionResult || { message: 'function call returned `undefined`' };
             console.log(`[functionCall] Function ${func.name} executed successfully`);
           } catch (err) {
             console.log('[functionCall] Error executing function', func.name, err);

@@ -6,12 +6,22 @@ import { jsonSchemaToFunctionSpec, jsonSchemaToShortSchema } from '../json-schem
 const paramsToJsonSchema = (parameters) => {
   if (!parameters || !parameters.length) return [];
 
-  const schemas = {}
-
-  const schema = {
-    type: 'object',
-    properties: {},
-    required: []
+  const schemas = {
+    query: {
+      type: 'object',
+      properties: {},
+      required: []
+    },
+    header: {
+      type: 'object',
+      properties: {},
+      required: []
+    },
+    path: {
+      type: 'object',
+      properties: {},
+      required: []
+    }
   };
 
   parameters.forEach(param => {
@@ -21,23 +31,10 @@ const paramsToJsonSchema = (parameters) => {
     if (!['query', 'header', 'path'].includes(paramIn)) return;
 
     // Add property to schema
-    if (schemas[paramIn]) {
-      schemas[paramIn].properties[name] = {
-        ...paramSchema,
-        description: param.description || undefined
-      };
-    } else {
-      schemas[paramIn] = {
-        properties: {
-          [name]: {
-            ...paramSchema,
-            description: param.description || undefined
-          }
-        },
-        type: 'object',
-        required: []
-      }
-    }
+    schemas[paramIn].properties[name] = {
+      ...paramSchema,
+      description: param.description || undefined
+    };
 
     // Add to required array if parameter is required
     if (required) {
@@ -45,11 +42,20 @@ const paramsToJsonSchema = (parameters) => {
     }
   });
 
-  // Remove required array if empty
-  if (schemas[paramIn].required.length === 0) {
-    delete schemas[paramIn].required;
-  }
-  return Object.entries(schema).map(([key, value]) => ({ key, value, validator: data => validate(jsonSchemaToShortSchema(value), data) }));
+  // Clean up schemas and convert to array format
+  return Object.entries(schemas)
+    .filter(([_, schema]) => Object.keys(schema.properties).length > 0)
+    .map(([key, schema]) => {
+      // Remove required array if empty
+      if (schema.required.length === 0) {
+        delete schema.required;
+      }
+      return {
+        key,
+        value: schema,
+        validator: data => validate(jsonSchemaToShortSchema(schema), data)
+      };
+    });
 };
 
 const ParseOpenApiSpec = ({ specs, ...tool }) => {
