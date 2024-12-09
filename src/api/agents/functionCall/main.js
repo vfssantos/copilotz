@@ -231,8 +231,10 @@ async function functionCall(
             const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
+              if (config.streamResponseBy === 'turn' && __media__) {
+                res.stream(`${JSON.stringify({media: __media__})}\n`);
+              }
               func.results = actionResult;
-              functionAgentResponse.media = __media__;
             } else {
               func.results = actionResponse || { message: 'function call returned `undefined`' };
             }
@@ -269,7 +271,8 @@ async function functionCall(
         });
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-        await functionCall.bind(this)(
+
+        return await functionCall.bind(this)(
           {
             input: '',
             actionModules,
@@ -282,10 +285,7 @@ async function functionCall(
             agentType,
           },
           res
-        ).then((agentResponse) => {
-          res.stream(`${JSON.stringify(agentResponse)}\n`);
-          return agentResponse;
-        })
+        )
       }
     }
   }
