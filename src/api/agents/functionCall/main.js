@@ -269,7 +269,7 @@ async function functionCall(
         });
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-        return await functionCall.bind(this)(
+        functionCall.bind(this)(
           {
             input: '',
             actionModules,
@@ -282,7 +282,10 @@ async function functionCall(
             agentType,
           },
           res
-        );
+        ).then((agentResponse) => {
+          res.stream(`${JSON.stringify(agentResponse)}\n`);
+          return agentResponse;
+        })
       }
     }
   }
