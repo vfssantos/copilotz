@@ -269,7 +269,7 @@ async function functionCall(
         });
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-        functionCall.bind(this)(
+        await functionCall.bind(this)(
           {
             input: '',
             actionModules,
