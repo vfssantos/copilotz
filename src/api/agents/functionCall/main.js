@@ -232,7 +232,7 @@ async function functionCall(
             const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
-              functionAgentResponse.media = { ...functionAgentResponse.media, ...__media__ };
+              functionAgentResponse.media = { ...media, ...functionAgentResponse?.media, ...__media__ };
               func.results = actionResult;
             } else {
               func.results = actionResponse || { message: 'function call returned `undefined`' };
@@ -273,6 +273,7 @@ async function functionCall(
 
         // Make sure we merge any existing media with functionAgentResponse.media
         const mergedMedia = { ...media, ...functionAgentResponse.media };
+
 
         return await functionCall.bind(this)(
           {
