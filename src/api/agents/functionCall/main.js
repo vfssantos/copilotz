@@ -17,6 +17,7 @@ async function functionCall(
     instructions,
     input,
     audio,
+    media,
     answer,
     user,
     thread,
@@ -149,7 +150,7 @@ async function functionCall(
 
   let functionAgentResponse = {};
 
-  
+
   // 8. Validate and Format Output
   if (chatAgentResponse?.message) {
     console.log(`[functionCall] Validating and formatting output`);
@@ -231,9 +232,10 @@ async function functionCall(
             const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
-              if (config.streamResponseBy === 'turn' && __media__) {
-                res.stream(`${JSON.stringify({media: __media__})}\n`);
-              }
+              // if (config.streamResponseBy === 'turn' && __media__) {
+              //   res.stream(`${JSON.stringify({media: __media__})}\n`);
+              // }
+              functionAgentResponse.media = { ...media, ...__media__ };
               func.results = actionResult;
             } else {
               func.results = actionResponse || { message: 'function call returned `undefined`' };
@@ -275,6 +277,7 @@ async function functionCall(
         return await functionCall.bind(this)(
           {
             input: '',
+            media: functionAgentResponse.media,
             actionModules,
             user,
             thread,
