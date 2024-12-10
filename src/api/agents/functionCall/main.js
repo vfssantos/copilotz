@@ -17,7 +17,6 @@ async function functionCall(
     instructions,
     input,
     audio,
-    media,
     answer,
     user,
     thread,
@@ -232,7 +231,9 @@ async function functionCall(
             const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
-              functionAgentResponse.media = { ...media, ...functionAgentResponse?.media, ...__media__ };
+              if (config.streamResponseBy === 'turn' && __media__) {
+                res.stream(`${JSON.stringify({ media: __media__ })}\n`);
+              }
               func.results = actionResult;
             } else {
               func.results = actionResponse || { message: 'function call returned `undefined`' };
@@ -271,14 +272,9 @@ async function functionCall(
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
 
-        // Make sure we merge any existing media with functionAgentResponse.media
-        const mergedMedia = { ...media, ...functionAgentResponse.media };
-
-
         return await functionCall.bind(this)(
           {
             input: '',
-            media: mergedMedia,  // Pass the merged media
             actionModules,
             user,
             thread,
@@ -354,6 +350,10 @@ const _baseOutputSchema = {
     "message": {
       "type": "string",
       "description": "Assistant message goes here. This is what the user will see. Unless otherwise specified, leave it blank when calling a function.",
+    },
+    "media": {
+      "type": "object",
+      "description": "Media to be forwarded to the user. Leave it blank.",
     },
     "nextTurn": {
       'type': 'string',
