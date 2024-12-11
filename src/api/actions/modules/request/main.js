@@ -93,12 +93,10 @@ async function request(params) {
     try {
         const response = await fetch(url, fetchOptions);
 
-        if (!response.ok) {
-            throw { error: { status: response.status, statusText: response.statusText } };
-        }
 
         const resBody = await response.text();
         let res;
+
         try {
             res = JSON.parse(resBody);
 
@@ -109,7 +107,7 @@ async function request(params) {
             }
 
             // Return both the cleaned response and base64 content
-            return {
+            res = {
                 ...res,
                 __media__: Object.keys(base64Content).length > 0 ? base64Content : undefined
             };
@@ -117,10 +115,17 @@ async function request(params) {
         } catch (_) {
             // if response is string, check for data url and extract media
             if (typeof resBody === 'string' && isBase64(resBody)) {
-                return { __media__: { [new URL(url).pathname]: resBody } };
+                res = { __media__: { [new URL(url).pathname]: resBody } };
+            } else {
+                res = { data: resBody }
             }
-            return resBody
         }
+
+        if (!response.ok) {
+            throw { error: { status: response.status, statusText: response.statusText }, ...res };
+        }
+
+        return res
 
     } catch (error) {
         console.error('Error processing request:', error, {
