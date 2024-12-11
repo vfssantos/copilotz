@@ -243,7 +243,7 @@ async function functionCall(
           } catch (err) {
             console.log('[functionCall] Error executing function', func.name, err);
             func.status = 'failed';
-            func.results = { error: { code: 'FUNCTION_ERROR', message: err.message } };
+            func.results = { error: { code: 'FUNCTION_ERROR', ...err?.error } };
           }
 
           return func;

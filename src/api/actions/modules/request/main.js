@@ -94,7 +94,7 @@ async function request(params) {
         const response = await fetch(url, fetchOptions);
 
         if (!response.ok) {
-            throw { status: response.status, statusText: response.statusText };
+            throw { error: { status: response.status, statusText: response.statusText } };
         }
 
         const resBody = await response.text();
@@ -131,7 +131,7 @@ async function request(params) {
             path: data.path,
             headers: data.headers,
         });
-        throw error;
+        throw { error };
     }
 };
 
