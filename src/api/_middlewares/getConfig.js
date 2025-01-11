@@ -1,4 +1,4 @@
-async async function getConfig(req) => {
+async function getConfig(req) {
 
     const { models } = this;
 
