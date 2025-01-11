@@ -1,9 +1,13 @@
 async function getCopilotz(req) {
-    const { models } = this;
-    const { config: _config } = req.params;
-    const { copilotzId, ...config } = _config;
 
-    if (!req.resources) req.resources = {};
+    const { models } = this;
+
+    const data = req?.data || {};
+    const resources = data?.resources || {};
+
+    const config = { ...data?.config, ...resources?.config };
+
+    const { copilotzId, ..._config } = config;
 
     if (!copilotzId) {
         throw { status: 400, message: 'Copilotz not found' };
@@ -23,8 +27,10 @@ async function getCopilotz(req) {
 
     copilotzDoc.actions = actions;
 
-    req.resources.copilotz = copilotzDoc;
-    req.resources.config = config;
+    data.resources = { ...resources, copilotz: copilotzDoc };
+    data.config = { ...config, ..._config };
+
+    req.data = data;
 
     return req;
 }

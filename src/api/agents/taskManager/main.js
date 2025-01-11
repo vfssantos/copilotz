@@ -18,7 +18,6 @@ async function taskManager(
         outputSchema,
         overrideBaseOutputSchema,
         agentType,
-        resources
     },
     res
 ) {
@@ -37,6 +36,7 @@ async function taskManager(
 
     // Extract resources
     const { copilotz, config } = resources;
+
     const { job } = copilotz || {};
     const { workflows: jobWorkflows } = job || {};
     const { workflows: copilotWorkflows } = copilotz || {};
@@ -323,6 +323,7 @@ async function taskManager(
                 options,
                 agentType,
                 iterations: iterations + 1,
+                resources
             },
             res
         );

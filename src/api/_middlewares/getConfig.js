@@ -1,10 +1,11 @@
 async function getConfig(req) {
 
+    const data = req?.data || {};
+    const resources = data?.resources || {};
+
     const { models } = this;
 
-    if (!req.resources) req.resources = {};
-
-    const { copilotz, config = {} } = req.resources;
+    const { copilotz, config = {} } = resources;
 
     // Get the Copilotz's configuration
     let configsArr = (await models.configs.find({ owner: copilotz._id, type: 'copilotz' })) || [];
@@ -23,7 +24,8 @@ async function getConfig(req) {
         return obj;
     }, {});
 
-    req.resources.config = { ...config, ..._config };
+    data.resources.config = { ...config, ..._config };
+    req.data = data;
 
     return req;
 }

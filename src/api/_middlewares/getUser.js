@@ -1,16 +1,17 @@
 async function getUsers(req) {
+
     const { models } = this;
 
-    if (!req.params?.user?.phone && !req.params?.user?.email) return req;
+    if (!req.data?.user?.phone && !req.data?.user?.email) return req;
 
-    if (!req.resources) req.resources = {};
+    const data = req?.data || {};
 
     let usersPhonePromise, usersEmailPromise;
-    if (req.params?.user?.phone) {
-        usersPhonePromise = models.users.findOne({ phone: req.params?.user?.phone });
+    if (data?.user?.phone) {
+        usersPhonePromise = models.users.findOne({ phone: data?.user?.phone });
     }
-    if (req.params?.user?.email) {
-        usersEmailPromise = models.users.findOne({ email: req.params?.user?.email });
+    if (data?.user?.email) {
+        usersEmailPromise = models.users.findOne({ email: data?.user?.email });
     }
 
     const usersResolved = await Promise.all([usersPhonePromise, usersEmailPromise]);
@@ -18,14 +19,15 @@ async function getUsers(req) {
 
     if (!user) {
         user = await models.users.create({
-            phone: req.params?.user?.phone,
-            email: req.params?.user?.email,
-            name: req.params?.user?.name || 'Guest',
-            context: req.params?.user?.context || {},
+            phone: data?.user?.phone,
+            email: data?.user?.email,
+            name: data?.user?.name || 'Guest',
+            context: data?.user?.context || {},
         });
     }
 
-    req.resources.user = user;
+    data.user = user;
+    req.data = data;
 
     return req;
 }

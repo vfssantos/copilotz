@@ -135,6 +135,7 @@ async function functionCall(
   const chatAgentResponse = await chatAgent.bind(this)(
     {
       threadLogs,
+      resources,
       answer,
       user,
       thread,

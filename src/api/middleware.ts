@@ -12,12 +12,13 @@ const middleware: any = async (req: any) => {
         getCopilotz,
         getConfig,
         getJob,
-        getSubscription,
     ];
 
     for (const middlewareFn of middlewares) {
         req = await middlewareFn.bind({ ...middleware })(req);
     }
+
+    req.params = { ...req.params, ...req.data };
 
     return req;
 
