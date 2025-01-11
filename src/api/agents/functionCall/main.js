@@ -344,6 +344,7 @@ Guidelines:
 - If a function fails, diagnose if there's any error in the args you've passed. If so, retry. If not, provide a clear message to the user.
 - Specify function names and arguments clearly.
 - If you are asking the user for more information or waiting for a user response, set nextTurn to "user". If you have a clear answer, set nextTurn to "assistant".
+- You must NOT include the function result in the functions array, just the function name and arguments.
 `;
 
 const _baseOutputSchema = {
