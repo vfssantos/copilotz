@@ -27,8 +27,8 @@ async function getCopilotz(req) {
 
     copilotzDoc.actions = actions;
 
-    data.resources = { ...resources, copilotz: copilotzDoc };
-    data.config = { ...config, ..._config };
+    Object.assign(resources, { copilotz: copilotzDoc, config: { ...config, ..._config } });
+    Object.assign(data, { resources });
 
     req.data = data;
 
