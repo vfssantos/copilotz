@@ -27,6 +27,7 @@ import validate from "axion-modules/connectors/validator.ts";
 
 async function chatAgent(
     {
+        resources,
         instructions,
         input,
         audio,
@@ -53,7 +54,6 @@ async function chatAgent(
         __requestId__,
         __executionId__,
         modules,
-        resources,
         utils,
         env,
     } = this || chatAgent;

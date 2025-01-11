@@ -1,14 +1,16 @@
-const getConfig = async (req) => {
+async async function getConfig(req) => {
 
-    const { models, resources } = getConfig;
+    const { models } = this;
 
-    const { copilotz, config } = resources;
+    if (!req.resources) req.resources = {};
+
+    const { copilotz, config = {} } = req.resources;
 
     // Get the Copilotz's configuration
     let configsArr = (await models.configs.find({ owner: copilotz._id, type: 'copilotz' })) || [];
 
     // Join Copilotz's configuration with the config passed by params
-    configsArr = [...(copilotz.configs || []), ...(configsArr || [])].filter(c=>c?._id)
+    configsArr = [...(copilotz.configs || []), ...(configsArr || [])].filter(c => c?._id)
 
     // Remove duplicates
     configsArr = configsArr.filter(
@@ -21,7 +23,7 @@ const getConfig = async (req) => {
         return obj;
     }, {});
 
-    getConfig.resources.config = { ...config, ..._config };
+    req.resources.config = { ...config, ..._config };
 
     return req;
 }

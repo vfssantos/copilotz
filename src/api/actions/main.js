@@ -1,6 +1,6 @@
 import * as specParsers from "./specParsers/main.js";
 
-const actionExecutor = async ({ specs, specType, module: moduleUrl, config }) => {
+async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
 
     const functions = {};
 

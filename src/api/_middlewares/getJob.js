@@ -1,10 +1,8 @@
+async function getJob(req) {
+    const { models } = this;
+    const { copilotz } = req.resources;
 
-const getJob = async (req) => {
-    const { resources, models } = getJob;
-
-    const { copilotz } = resources;
-
-    if (!copilotz.job) return;
+    if (!copilotz.job) return req;
 
     const job = await models.jobs.findOne({ _id: copilotz.job }, { populate: ['actions'] });
 
@@ -16,9 +14,11 @@ const getJob = async (req) => {
 
     job.workflows = workflows;
 
-    copilotz.job = job;
-
-    getJob.resources.copilotz = copilotz;
+    if (!req.resources) req.resources = {};
+    req.resources.copilotz = {
+        ...copilotz,
+        job
+    };
 
     return req;
 }

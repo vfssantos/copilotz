@@ -3,12 +3,9 @@ import {
     getCopilotz,
     getConfig,
     getJob,
-    getSubscription,
 } from './_middlewares/main.js';
 
 const middleware: any = async (req: any) => {
-
-    middleware.resources = middleware.resources || {};
 
     const middlewares = [
         getUser,
@@ -19,11 +16,9 @@ const middleware: any = async (req: any) => {
     ];
 
     for (const middlewareFn of middlewares) {
-        Object.assign(middlewareFn, middleware);
-        await middlewareFn(req);
-        Object.assign(middleware, middlewareFn);
+        req = await middlewareFn.bind({ ...middleware })(req);
     }
-    
+
     return req;
 
 }

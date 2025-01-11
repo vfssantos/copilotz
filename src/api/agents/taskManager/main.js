@@ -4,7 +4,22 @@ import validate from "axion-modules/connectors/validator.ts";
 const maxIter = 3;
 
 async function taskManager(
-    { answer, threadLogs, instructions, input, audio, user, thread, options, iterations = 0, outputSchema, overrideBaseOutputSchema, agentType },
+    {
+        resources,
+        answer,
+        threadLogs,
+        instructions,
+        input,
+        audio,
+        user,
+        thread,
+        options,
+        iterations = 0,
+        outputSchema,
+        overrideBaseOutputSchema,
+        agentType,
+        resources
+    },
     res
 ) {
     console.log(`[taskManager] Starting iteration ${iterations}`);
@@ -16,7 +31,7 @@ async function taskManager(
     let taskDoc;
 
     // Extract Dependencies
-    const { models, modules, resources, utils } = this;
+    const { models, modules, utils } = this;
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
     const { agents } = modules;
 
@@ -186,17 +201,17 @@ async function taskManager(
 
         // Combine actions and ensure uniqueness by action ID
         const uniqueActionsMap = new Map();
-        
+
         [
             ...(copilotz.actions || []),
             ...(copilotz?.job?.actions || []),
             ...(currentStep?.actions || []),
             (currentStep?.onSubmit || null),
         ]
-        .filter(Boolean)
-        .forEach(action => {
-            uniqueActionsMap.set(action._id.toString(), action);
-        });
+            .filter(Boolean)
+            .forEach(action => {
+                uniqueActionsMap.set(action._id.toString(), action);
+            });
 
         copilotz.actions = Array.from(uniqueActionsMap.values());
         resources.copilotz = copilotz;
@@ -242,6 +257,7 @@ async function taskManager(
     console.log(`[taskManager] Calling functionCall agent`);
     const functionCallAgentResponse = await functionCallAgent.bind(this)(
         {
+            resources,
             actionModules,
             instructions,
             input,

@@ -8,6 +8,7 @@ const maxIter = 5;
 
 async function functionCall(
   {
+    resources,
     threadLogs,
     outputSchema,
     actionModules,
@@ -34,7 +35,7 @@ async function functionCall(
   actionModules = actionModules || {};
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { modules, resources, utils, env } = this || functionCall;
+  const { modules, utils, env } = this || functionCall;
 
   const { actionExecutor, agents } = modules;
 
@@ -59,7 +60,7 @@ async function functionCall(
     // 2.1. Execute actions
     const actionsObj = (await Promise.all(
       copilotz.actions.map(async (_action) => {
-        const action = await actionExecutor({
+        const action = await actionExecutor.bind(this)({
           specs: _action.spec,
           specType: _action.specType,
           module: _action.moduleUrl
@@ -274,6 +275,7 @@ async function functionCall(
 
         return await functionCall.bind(this)(
           {
+            resources,
             input: '',
             actionModules,
             user,

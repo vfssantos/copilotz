@@ -1,8 +1,9 @@
-const getUsers = async (req) => {
+async function getUsers(req) {
+    const { models } = this;
 
-    const { models } = getUsers;
+    if (!req.params?.user?.phone && !req.params?.user?.email) return req;
 
-    if (!req?.params.user.name) return;
+    if (!req.resources) req.resources = {};
 
     let usersPhonePromise, usersEmailPromise;
     if (req.params?.user?.phone) {
@@ -16,20 +17,17 @@ const getUsers = async (req) => {
     let user = usersResolved[0] || usersResolved[1];
 
     if (!user) {
-
         user = await models.users.create({
             phone: req.params?.user?.phone,
             email: req.params?.user?.email,
             name: req.params?.user?.name || 'Guest',
             context: req.params?.user?.context || {},
         });
-
     }
 
-    getUsers.resources.user = user;
+    req.resources.user = user;
 
     return req;
-
 }
 
 export default getUsers;

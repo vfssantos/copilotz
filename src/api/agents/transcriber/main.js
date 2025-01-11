@@ -29,14 +29,14 @@ const base64ToBlob = (base64) => {
 };
 
 async function transcriberAgent(
-  { instructions, audio, agentType },
+  { resources, instructions, audio, agentType },
   res
 ) {
   agentType = agentType || 'transcriber';
   try {
     console.log(`[transcriberAgent] Starting transcriber agent`);
 
-    const { modules, resources, env, __requestId__ } = this;
+    const { modules, env, __requestId__ } = this;
 
     const { ai } = modules;
 
