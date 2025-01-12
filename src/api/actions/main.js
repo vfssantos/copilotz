@@ -55,8 +55,8 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     
     await Promise.all(parsedSpecs.actions.map(async ({ name, spec, ...data }) => {
         const mod = await import(moduleUrl).then(m => m.default);
-
-        const fn = mod.bind({ ...this, ...data, config: { ...config, ...parsedSpecs.globals } });
+        const __tags__ = { action: name };
+        const fn = mod.bind({ __tags__, ...this, ...data, config: { ...config, ...parsedSpecs.globals } });
         fn.spec = spec;
         functions[name] = fn;
         return fn;

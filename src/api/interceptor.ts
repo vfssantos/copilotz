@@ -27,12 +27,15 @@ async function beforeRun({ name, url, requestId, executionId, input, properties 
     const { models } = this;
     if (models?.logs) {
         const sanitizedInput = sanitizeObject({ ...input })
+        const tags = properties.__tags__;
+
         models.logs.create({
             name,
             url,
             requestId,
             executionId,
-            input: sanitizedInput
+            input: sanitizedInput,
+            tags
         }, { async: true })
     }
     return
@@ -59,10 +62,19 @@ async function afterRun({ name, url, requestId, status, executionId, output, dur
             }
         }
         const sanitizedOutput = sanitizeObject(output)
+        const tags = properties.__tags__;
+        if (typeof sanitizedOutput === 'object' && sanitizedOutput !== null) {
+            const { __tags__, ...rest } = sanitizedOutput;
+            output = rest;
+            __tags__ && Object.assign(tags || {}, __tags__);
+        } else {
+            output = sanitizedOutput;
+        }
         models.logs.update({ executionId }, {
             duration,
             status,
-            output: sanitizedOutput,
+            output,
+            tags
         }, { async: true })
     }
     return
