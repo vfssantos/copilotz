@@ -25,6 +25,7 @@ async function openAiChat(chat, stream = () => { }) {
       model: config.model || "gpt-4o-mini",
       stream: true,
       temperature: config.temperature || 0,
+      max_completion_tokens: config.maxCompletionTokens || 1000,
       response_format: config.responseType === "json"
         ? { type: "json_object" }
         : undefined,
