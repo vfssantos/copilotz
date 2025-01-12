@@ -1,15 +1,14 @@
-import * as agents from './agents/main.js';
-import * as ai from './ai/main.js';
 import actionExecutor from './actions/main.js';
 
-export default (shared: any) => {
+const agents = (name: string) => import(`./agents/${name}/main.js`)
+  .then(module => module.default);
 
+const ai = (name: string, provider: string) => import(`./ai/${name}/${provider}/main.js`)
+  .then(module => module.default);
+
+export default (shared: any) => {
   return {
     ...shared,
-    modules: {
-      agents,
-      ai,
-      actionExecutor
-    }
+    modules: { agents, ai, actionExecutor }
   }
 }

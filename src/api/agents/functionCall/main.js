@@ -131,7 +131,8 @@ async function functionCall(
 
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);
-  const chatAgent = agents.chat;
+  const chatAgent = await agents('chat');
+
   const chatAgentResponse = await chatAgent.bind(this)(
     {
       threadLogs,

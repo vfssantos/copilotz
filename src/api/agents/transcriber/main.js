@@ -48,8 +48,7 @@ async function transcriberAgent(
     }
 
     const provider = config?.AI_CHAT_PROVIDER?.provider;
-    const transcriber = ai['speechToText'][provider];
-    Object.assign(transcriber, {
+    const transcriber = (await ai('speechToText', provider)).bind({
       __requestId__,
       config: {
         apiKey:

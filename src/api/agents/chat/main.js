@@ -111,7 +111,7 @@ async function chatAgent(
     // 4.2. If Audio Exists, Transcribe to Text and Add to Chat Logs
     if (audio) {
         console.log(`[chatAgent] Audio input detected, starting transcription`);
-        const transcriber = agents.transcriber;
+        const transcriber = await agents('transcriber');
         const { message: transcribedText } = await transcriber.bind(this)({
             audio,
             instructions,
@@ -148,7 +148,8 @@ async function chatAgent(
     const { provider, ...providerOptions } = config?.AI_CHAT_PROVIDER || {
         provider: 'openai',
     }; // use openai as default provider
-    const aiChat = ai.chat[provider].bind({
+
+    const aiChat = (await ai('chat', provider)).bind({
         __requestId__,
         config: {
             ...providerOptions,

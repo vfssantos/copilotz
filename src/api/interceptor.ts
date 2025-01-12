@@ -1,5 +1,5 @@
 //max value length for sanitization is 100kb
-const MAX_VALUE_LENGTH = 102400;
+const MAX_VALUE_LENGTH = 1024 * 100;
 
 function sanitizeObject(obj: any): any {
     if (typeof obj !== 'object' || obj === null) {

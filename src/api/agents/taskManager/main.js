@@ -252,7 +252,7 @@ async function taskManager(
         }
     }
 
-    const functionCallAgent = agents.functionCall;
+    const functionCallAgent = await agents('functionCall');
 
     console.log(`[taskManager] Calling functionCall agent`);
     const functionCallAgentResponse = await functionCallAgent.bind(this)(
