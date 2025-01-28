@@ -64,7 +64,7 @@ async function functionCall(
           specs: _action.spec,
           specType: _action.specType,
           module: _action.moduleUrl
-        })
+        }, res)
         return action;
       })
     )) // 2.2. Merge actions
@@ -79,6 +79,10 @@ async function functionCall(
 
   // 2.8. If inherited actionModules, run actions with the same name through actionModules as hooks
 
+  // 2.8.1. Append callback to actionModules
+  actionModules.callback = () => { };
+  actionModules.callback.spec = `(send callback to user): message<string> -> (callback sent successfully)`
+
   Object.keys(actionModules).forEach((actionModule) => {
     const action = actions[actionModule];
     if (action) {
@@ -89,6 +93,7 @@ async function functionCall(
       actions[actionModule] = actionModules[actionModule]
     }
   });
+
 
   // 3. Get Action Specs
   const actionSpecs = Object.entries(actions)
@@ -184,10 +189,15 @@ async function functionCall(
       if (functionAgentResponse?.functions?.some((func) => func.name === 'callback')) {
         const callbackIndex = functionAgentResponse.functions.findIndex((func) => func.name === 'callback');
 
-        functionAgentResponse = {
+        config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify({
           ...functionAgentResponse,
           ...responseJson.functions[callbackIndex]?.args,
-        };
+        })}\n`);
+
+        // functionAgentResponse = {
+        //   ...functionAgentResponse,
+        //   ...responseJson.functions[callbackIndex]?.args,
+        // };
 
         functionAgentResponse.functions.splice(callbackIndex, 1);
       }
