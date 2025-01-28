@@ -189,6 +189,11 @@ async function functionCall(
       if (functionAgentResponse?.functions?.some((func) => func.name === 'callback')) {
         const callbackIndex = functionAgentResponse.functions.findIndex((func) => func.name === 'callback');
 
+        console.log('sending callback', {
+          ...functionAgentResponse,
+          ...responseJson.functions[callbackIndex]?.args,
+        })
+
         config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify({
           ...functionAgentResponse,
           ...responseJson.functions[callbackIndex]?.args,
@@ -202,6 +207,7 @@ async function functionCall(
         functionAgentResponse.functions.splice(callbackIndex, 1);
       }
 
+      console.log('sending functionAgentResponse', functionAgentResponse)
       config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(functionAgentResponse)}\n`);
     } catch (err) {
       let errorMessage;
