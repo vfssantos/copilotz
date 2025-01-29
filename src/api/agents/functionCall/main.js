@@ -199,7 +199,7 @@ async function functionCall(
           ...responseJson.functions[callbackIndex]?.args,
         })}\n`);
 
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 2000));
 
         // functionAgentResponse = {
         //   ...functionAgentResponse,
