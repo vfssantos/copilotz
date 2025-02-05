@@ -7,9 +7,8 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     // change spectType to all minuscles and replace "-" with "_"
     specType = specType.toLowerCase().replace(/-/g, '_');
 
-    const parsedSpecs = specParsers[specType]({ specs, config });
+    const parsedSpecs = specParsers[specType]({ specs, config }, res);
 
-    
     // example parsedSpecs: 
     // globals:{},
     // actions: [{
@@ -52,7 +51,7 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     if (!(moduleUrl.startsWith('http') || moduleUrl.startsWith('native') || moduleUrl.startsWith('file:'))) {
         throw new Error(`Invalid Module URL: namespace for ${moduleUrl} not found. Should either start with 'http:', 'https:', or 'native:'.`);
     }
-    
+
     await Promise.all(parsedSpecs.actions.map(async ({ name, spec, ...data }) => {
         const mod = await import(moduleUrl).then(m => m.default);
         const __tags__ = { action: name };

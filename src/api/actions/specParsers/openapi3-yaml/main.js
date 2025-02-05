@@ -2,6 +2,41 @@ import YAML from "npm:yaml";
 import validate from 'axion-modules/connectors/validator.ts';
 import { jsonSchemaToFunctionSpec, jsonSchemaToShortSchema } from '../json-schema/main.js';
 
+
+const metadataSchema = {
+  type: "object",
+  properties: {
+    thread: {
+      type: "object",
+      properties: {
+        extId: "string",
+        ctx: {
+          type: "object",
+          additionalProperties: true
+        }
+      }
+    },
+    user: {
+      type: "object",
+      properties: {
+        extId: "string",
+        id: "string",
+        name: "string",
+        email: "string",
+        phone: "string",
+        ctx: {
+          type: "object",
+          additionalProperties: true
+        }
+      }
+    },
+    extId: "string",
+    ctx: {
+      type: "object",
+      additionalProperties: true
+    }
+  }
+}
 // Add this new function to transform parameters to JSON Schema
 const paramsToJsonSchema = (parameters) => {
   if (!parameters || !parameters.length) return [];
@@ -101,6 +136,9 @@ const ParseOpenApiSpec = ({ specs, ...tool }) => {
         const content = details.requestBody.content["application/json"];
         if (content && content.schema) {
           const bodyJsonSchema = content.schema;
+          if (bodyJsonSchema?.properties) {
+            bodyJsonSchema.properties._metadata = metadataSchema;
+          }
           action.schemas.push({
             key: "body",
             value: bodyJsonSchema,
