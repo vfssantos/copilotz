@@ -7,7 +7,7 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     // change spectType to all minuscles and replace "-" with "_"
     specType = specType.toLowerCase().replace(/-/g, '_');
 
-    const parsedSpecs = specParsers[specType]({ specs, config }, res);
+    const parsedSpecs = specParsers[specType]({ specs, config });
 
     // example parsedSpecs: 
     // globals:{},
