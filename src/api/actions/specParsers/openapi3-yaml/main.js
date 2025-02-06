@@ -14,7 +14,8 @@ const metadataSchema = {
           type: "object",
           additionalProperties: true
         }
-      }
+      },
+      additionalProperties: true
     },
     user: {
       type: "object",
@@ -27,8 +28,9 @@ const metadataSchema = {
         ctx: {
           type: "object",
           additionalProperties: true
-        }
-      }
+        },
+      },
+      additionalProperties: true
     },
     extId: "string",
     ctx: {

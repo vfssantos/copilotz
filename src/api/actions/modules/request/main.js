@@ -93,7 +93,6 @@ async function request(params) {
     try {
         const response = await fetch(url, fetchOptions);
 
-
         const resBody = await response.text();
         let res;
 

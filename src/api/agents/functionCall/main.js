@@ -80,7 +80,7 @@ async function functionCall(
   // 2.8. If inherited actionModules, run actions with the same name through actionModules as hooks
 
   // 2.8.1. Append callback to actionModules
-  actionModules.callback = () => { };
+  actionModules.callback = (data) => `${res.stream(JSON.stringify(data))}\n`;
   actionModules.callback.spec = `(send callback to user): message<string> -> (callback sent successfully)`
 
   Object.keys(actionModules).forEach((actionModule) => {
@@ -184,32 +184,6 @@ async function functionCall(
         },
       };
 
-      console.log(`[functionCall] Sending message to user`);
-
-      if (functionAgentResponse?.functions?.some((func) => func.name === 'callback')) {
-        const callbackIndex = functionAgentResponse.functions.findIndex((func) => func.name === 'callback');
-
-        console.log('sending callback', JSON.stringify({
-          ...functionAgentResponse,
-          ...responseJson.functions[callbackIndex]?.args,
-        }))
-
-        config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify({
-          ...functionAgentResponse,
-          ...responseJson.functions[callbackIndex]?.args,
-        })}\n`);
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-
-        // functionAgentResponse = {
-        //   ...functionAgentResponse,
-        //   ...responseJson.functions[callbackIndex]?.args,
-        // };
-
-        functionAgentResponse.functions.splice(callbackIndex, 1);
-      }
-
-      console.log('sending functionAgentResponse', JSON.stringify(functionAgentResponse))
       config.streamResponseBy === 'turn' && res.stream(`${JSON.stringify(functionAgentResponse)}\n`);
     } catch (err) {
       let errorMessage;
@@ -249,7 +223,7 @@ async function functionCall(
           func.status = 'pending';
           try {
             console.log(`[functionCall] Executing function: ${func.name}`);
-            const actionResponse = await Promise.resolve(action({ ...func.args, _user: user }));
+            const actionResponse = await Promise.resolve(action({ ...func.args, _metadata: { user, thread } }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
               if (config.streamResponseBy === 'turn' && __media__) {
