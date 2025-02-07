@@ -79,7 +79,6 @@ async function functionCall(
   }
 
   // 2.8. If inherited actionModules, run actions with the same name through actionModules as hooks
-
   // 2.8.1. Append callback to actionModules
   actionModules.callback = async (data) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
