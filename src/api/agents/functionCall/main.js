@@ -83,7 +83,7 @@ async function functionCall(
   // 2.8.1. Append callback to actionModules
   actionModules.callback = async (data) => {
     await new Promise(resolve => setTimeout(resolve, 1000));
-    res.stream(JSON.stringify(data))
+    res.stream(`${JSON.stringify(data)}\n`)
   };
   actionModules.callback.spec = `(send callback to user): message<string> -> (callback sent successfully)`
 
