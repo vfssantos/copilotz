@@ -8,6 +8,7 @@ const maxIter = 5;
 
 async function functionCall(
   {
+    extId,
     resources,
     threadLogs,
     outputSchema,
@@ -226,7 +227,7 @@ async function functionCall(
           func.status = 'pending';
           try {
             console.log(`[functionCall] Executing function: ${func.name}`);
-            const actionResponse = await Promise.resolve(action({ ...func.args, _metadata: { user, thread } }));
+            const actionResponse = await Promise.resolve(action({ ...func.args, _metadata: { user, thread, extId } }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
               if (config.streamResponseBy === 'turn' && __media__) {
