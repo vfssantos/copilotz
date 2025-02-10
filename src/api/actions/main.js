@@ -2,12 +2,13 @@ import * as specParsers from "./specParsers/main.js";
 
 async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
 
+    const { withHooks } = this;
     const functions = {};
 
     // change spectType to all minuscles and replace "-" with "_"
     specType = specType.toLowerCase().replace(/-/g, '_');
 
-    const parsedSpecs = specParsers[specType]({ specs, config });
+    const parsedSpecs = await withHooks(specParsers[specType]).bind(this)({ specs, config });
 
     // example parsedSpecs: 
     // globals:{},
@@ -43,7 +44,6 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     //     "options":options,
     //     "spec": spec,
     // }...];
-    
 
     if (moduleUrl.startsWith('native:')) {
         moduleUrl = new URL(`./modules/${moduleUrl.replace('native:', '')}/main.js`, import.meta.url).href;
@@ -56,7 +56,12 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     await Promise.all(parsedSpecs.actions.map(async ({ name, spec, ...data }) => {
         const mod = await import(moduleUrl).then(m => m.default);
         const __tags__ = { action: name };
-        const fn = mod.bind({ __tags__, ...this, ...data, config: { ...config, ...parsedSpecs.globals } });
+        const fn = withHooks(mod).bind({
+            __tags__,
+            ...this,
+            ...data,
+            config: { ...config, ...parsedSpecs.globals }
+        });
         fn.spec = spec;
         functions[name] = fn;
         return fn;

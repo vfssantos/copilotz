@@ -24,11 +24,11 @@ async function beforeRun({ name, url, requestId, executionId, input, properties 
     properties: any;
 }) {
 
+
     const { models } = this;
     if (models?.logs) {
         const sanitizedInput = sanitizeObject({ ...input })
-        const tags = properties.__tags__;
-
+        const tags = properties?.__tags__;
         models.logs.create({
             name,
             url,

@@ -36,7 +36,7 @@ async function functionCall(
   actionModules = actionModules || {};
 
   // 1. Extract Modules, Resources, Utils, and Dependencies
-  const { modules, utils, env } = this || functionCall;
+  const { modules, utils, env, withHooks } = this || functionCall;
 
   const { actionExecutor, agents } = modules;
 
@@ -61,7 +61,7 @@ async function functionCall(
     // 2.1. Execute actions
     const actionsObj = (await Promise.all(
       copilotz.actions.map(async (_action) => {
-        const action = await actionExecutor.bind(this)({
+        const action = await withHooks(actionExecutor).bind(this)({
           specs: _action.spec,
           specType: _action.specType,
           module: _action.moduleUrl
@@ -124,8 +124,8 @@ async function functionCall(
     : '';
 
   // 6. Get Thread Logs
-  console.log(`[functionCall] Fetching thread history`);
   if (!threadLogs || !threadLogs?.length) {
+    console.log(`[functionCall] Fetching thread history for threadId: ${thread.extId}`);
     const lastLog = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
     if (lastLog) {
       const { prompt, ...agentResponse } = lastLog;
@@ -139,7 +139,7 @@ async function functionCall(
 
   // 7. Call Chat Agent
   console.log(`[functionCall] Calling chat agent`);
-  const chatAgent = await agents('chat');
+  const chatAgent = await withHooks(await agents('chat'));
 
   const chatAgentResponse = await chatAgent.bind(this)(
     {
@@ -270,7 +270,7 @@ async function functionCall(
 
         console.log(`[functionCall] Recursively calling functionCall for next iteration`);
 
-        return await functionCall.bind(this)(
+        return await withHooks(functionCall).bind(this)(
           {
             resources,
             input: '',

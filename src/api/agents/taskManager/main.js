@@ -30,7 +30,7 @@ async function taskManager(
     let taskDoc;
 
     // Extract Dependencies
-    const { models, modules, utils } = this;
+    const { models, modules, utils, withHooks} = this;
     const { createPrompt, getThreadHistory, jsonSchemaToShortSchema, mergeSchemas } = utils;
     const { agents } = modules;
 
@@ -252,7 +252,7 @@ async function taskManager(
         }
     }
 
-    const functionCallAgent = await agents('functionCall');
+    const functionCallAgent = await withHooks(await agents('functionCall'));
 
     console.log(`[taskManager] Calling functionCall agent`);
     const functionCallAgentResponse = await functionCallAgent.bind(this)(
@@ -304,7 +304,7 @@ async function taskManager(
         iterations < maxIter
     ) {
         console.log(`[taskManager] Recursively calling taskManager for next step`);
-        return await taskManager.bind(this)(
+        return await withHooks(taskManager).bind(this)(
             {
                 input: '',
                 actionModules,

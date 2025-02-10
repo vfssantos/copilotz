@@ -53,6 +53,7 @@ async function chatAgent(
         __tags__,
         __requestId__,
         __executionId__,
+        withHooks,
         modules,
         utils,
         env,
@@ -81,12 +82,11 @@ async function chatAgent(
     const { extId: threadId } = thread;
 
     // 3. Get Thread Logs
-    console.log(
-        `[chatAgent] Fetching thread history for threadId: ${threadId}`
-    );
-    console.log(`[functionCall] Fetching thread history`);
 
     if (!threadLogs || !threadLogs?.length) {
+        console.log(
+            `[chatAgent] Fetching thread history for threadId: ${threadId}`
+        );
         const lastLog = await getThreadHistory(thread.extId, { functionName: 'chatAgent', maxRetries: 10 })
         if (lastLog) {
             const { prompt, ...agentResponse } = lastLog;
@@ -111,7 +111,7 @@ async function chatAgent(
     // 4.2. If Audio Exists, Transcribe to Text and Add to Chat Logs
     if (audio) {
         console.log(`[chatAgent] Audio input detected, starting transcription`);
-        const transcriber = await agents('transcriber');
+        const transcriber = await withHooks(await agents('transcriber'));
         const { message: transcribedText } = await transcriber.bind(this)({
             audio,
             instructions,
@@ -148,8 +148,9 @@ async function chatAgent(
     const { provider, ...providerOptions } = config?.AI_CHAT_PROVIDER || {
         provider: 'openai',
     }; // use openai as default provider
+    const aiChatProvider = await withHooks(await ai('chat', provider));
 
-    const aiChat = (await ai('chat', provider)).bind({
+    const aiChat = aiChatProvider.bind({
         __requestId__,
         config: {
             ...providerOptions,

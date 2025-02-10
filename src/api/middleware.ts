@@ -5,8 +5,8 @@ import {
     getJob,
 } from './_middlewares/main.js';
 
-const middleware: any = async (req: any) => {
-
+async function middleware(req: any) {
+    
     const middlewares = [
         getUser,
         getCopilotz,
@@ -15,7 +15,7 @@ const middleware: any = async (req: any) => {
     ];
 
     for (const middlewareFn of middlewares) {
-        req = await middlewareFn.bind({ ...middleware })(req);
+        req = await middlewareFn.bind(this)(req);
     }
 
     req.params = { ...req.params, ...req.data };
