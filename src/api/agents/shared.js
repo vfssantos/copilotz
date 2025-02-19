@@ -129,14 +129,6 @@ async function getThreadHistory(threadId, { functionName, maxRetries, toAppend }
     .map(log => log.output)
     .filter(Boolean) || [];
 
-  console.log('logs', logs);
-
-  // 1.1.1 Remove all system messages from lastLog.output.prompt
-  // if (lastLog?.prompt?.length) {
-  //   lastLog.prompt = lastLog?.prompt?.filter(message => message.role !== 'system');
-  // }
-
-  console.log('logs', logs);
   const messageLogs = [];
   logs.forEach(log => {
     const { input, ...output } = log;
