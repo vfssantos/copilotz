@@ -15,7 +15,7 @@ function sanitizeObject(obj: any): any {
     );
 }
 
-async function beforeRun({ name, url, requestId, executionId, input, properties }: {
+function beforeRun(this: any, { name, url, requestId, executionId, input, properties }: {
     name: string;
     url: string;
     requestId: string;
@@ -24,8 +24,30 @@ async function beforeRun({ name, url, requestId, executionId, input, properties 
     properties: any;
 }) {
 
+    const pruneInput = (input: any, name: string) => {
+
+        switch (name) {
+            case 'chatAgent': {
+                const { threadLogs: _threadLogs, instructions: _instructions, ...rest } = input?.['0'];
+                return {['0']:rest};
+            }
+            case 'functionCall': {
+                const { threadLogs: _threadLogs, instructions: _instructions, ...rest } = input?.['0'];
+                return {['0']:rest};
+            }
+            case 'taskManager': {
+                const { threadLogs: _threadLogs, instructions: _instructions, ...rest } = input?.['0'];
+                return {['0']:rest};
+            }
+            default: {
+                return input;
+            }
+        }
+
+    }
 
     const { models } = this;
+
     if (models?.logs) {
         const sanitizedInput = sanitizeObject({ ...input })
         const tags = properties?.__tags__;
@@ -34,14 +56,14 @@ async function beforeRun({ name, url, requestId, executionId, input, properties 
             url,
             requestId,
             executionId,
-            input: sanitizedInput,
+            input: pruneInput(sanitizedInput, name),
             tags
-        }, { async: true })
+        })
     }
     return
 }
 
-async function afterRun({ name, url, requestId, status, executionId, output, duration, properties }: {
+function afterRun(this: any, { status, executionId, output, duration, properties }: {
     name: string;
     url: string;
     requestId: string;
@@ -51,7 +73,6 @@ async function afterRun({ name, url, requestId, status, executionId, output, dur
     duration: number;
     properties: any;
 }) {
-
     const { models } = this;
     if (models?.logs) {
         // check if output is an Error
@@ -62,11 +83,11 @@ async function afterRun({ name, url, requestId, status, executionId, output, dur
             }
         }
         const sanitizedOutput = sanitizeObject(output)
-        const tags = properties.__tags__;
+        const tags = properties?.__tags__ || {};
         if (typeof sanitizedOutput === 'object' && sanitizedOutput !== null) {
             const { __tags__, ...rest } = sanitizedOutput;
             output = rest;
-            __tags__ && Object.assign(tags || {}, __tags__);
+            __tags__ && Object.assign(tags, __tags__);
         } else {
             output = sanitizedOutput;
         }
@@ -74,8 +95,8 @@ async function afterRun({ name, url, requestId, status, executionId, output, dur
             duration,
             status,
             output,
-            tags
-        }, { async: true })
+            tags: Object.keys(tags).length > 0 ? tags : undefined
+        })
     }
     return
 }

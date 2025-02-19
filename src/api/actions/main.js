@@ -8,7 +8,7 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
     // change spectType to all minuscles and replace "-" with "_"
     specType = specType.toLowerCase().replace(/-/g, '_');
 
-    const parsedSpecs = await withHooks(specParsers[specType]).bind(this)({ specs, config });
+    const parsedSpecs = await specParsers[specType].bind(this)({ specs, config });
 
     // example parsedSpecs: 
     // globals:{},

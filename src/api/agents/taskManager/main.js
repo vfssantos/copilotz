@@ -241,15 +241,7 @@ async function taskManager(
 
     console.log(`[taskManager] Fetching thread history`);
     if (!threadLogs || !threadLogs?.length) {
-        const lastLog = await getThreadHistory(thread.extId, { functionName: 'taskManager', maxRetries: 10 })
-        if (lastLog) {
-            const { prompt, ...agentResponse } = lastLog;
-            threadLogs = prompt || [];
-            const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-            threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
-        } else {
-            threadLogs = [];
-        }
+        threadLogs = await getThreadHistory(thread.extId, { functionName: 'taskManager', maxRetries: 10 })
     }
 
     const functionCallAgent = await withHooks(await agents('functionCall'));
@@ -335,15 +327,17 @@ async function taskManager(
 
     // Prepare the final response in consistent format
     const response = {
-        prompt: functionCallAgentResponse.prompt,
         ...taskManagerAgentResponse,
         consumption: {
             type: 'steps',
             value: iterations + 1,
         },
+        input: input,
+        __tags__: {
+            threadId: thread.extId,
+        }
     };
 
-    console.log(`[taskManager] Finished iteration ${iterations}`);
     return response;
 };
 

@@ -30,8 +30,6 @@ async function functionCall(
 ) {
   agentType = agentType || 'functionCall';
 
-  console.log(`[functionCall] Starting iteration ${iterations}`);
-
   let actions = {};
   actionModules = actionModules || {};
 
@@ -56,12 +54,11 @@ async function functionCall(
 
   // 2. Define Function Call Methods and Specs
   if (copilotz?.actions?.length) {
-    console.log(`[functionCall] Processing ${copilotz.actions.length} actions`);
 
     // 2.1. Execute actions
     const actionsObj = (await Promise.all(
       copilotz.actions.map(async (_action) => {
-        const action = await withHooks(actionExecutor).bind(this)({
+        const action = await actionExecutor.bind(this)({
           specs: _action.spec,
           specType: _action.specType,
           module: _action.moduleUrl
@@ -105,8 +102,6 @@ async function functionCall(
     })
     .join('\n');
 
-  console.log(`[functionCall] Generated ${Object.keys(actions).length} action specs`);
-
   // 4. Create Prompt
   const functionsPrompt = createPrompt(instructions || promptTemplate, {
     responseFormatPrompt: createPrompt(
@@ -125,20 +120,10 @@ async function functionCall(
 
   // 6. Get Thread Logs
   if (!threadLogs || !threadLogs?.length) {
-    console.log(`[functionCall] Fetching thread history for threadId: ${thread.extId}`);
-    const lastLog = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
-    if (lastLog) {
-      const { prompt, ...agentResponse } = lastLog;
-      threadLogs = prompt || [];
-      const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-      threadLogs.push({ role: 'assistant', content: JSON.stringify(validatedLastAgentResponse) });
-    } else {
-      threadLogs = [];
-    }
+    threadLogs = await getThreadHistory(thread.extId, { functionName: 'functionCall', maxRetries: 10 })
   }
 
   // 7. Call Chat Agent
-  console.log(`[functionCall] Calling chat agent`);
   const chatAgent = await withHooks(await agents('chat'));
 
   const chatAgentResponse = await chatAgent.bind(this)(
@@ -156,14 +141,12 @@ async function functionCall(
     },
     res
   );
-  console.log(`[functionCall] Chat agent response received`);
 
   let functionAgentResponse = {};
 
 
   // 8. Validate and Format Output
   if (chatAgentResponse?.message) {
-    console.log(`[functionCall] Validating and formatting output`);
     let responseJson = {};
     try {
       const unvalidatedResponseJson = JSON.parse(jsonrepair(chatAgentResponse.message));
@@ -207,9 +190,7 @@ async function functionCall(
     }
 
     // 9. Execute Functions
-    console.log('[functionCall] Available actions:', Object.keys(actions));
     if (functionAgentResponse?.functions) {
-      console.log(`[functionCall] Executing ${functionAgentResponse.functions.length} functions`);
       functionAgentResponse.functions = await Promise.all(
         functionAgentResponse.functions.map(async (func) => {
           func.startTime = new Date().getTime();
@@ -217,7 +198,6 @@ async function functionCall(
 
           const action = _.get(actions, func.name);
           if (!action) {
-            console.log(`[functionCall] Action not found: ${func.name}`);
             func.status = 'failed';
             func.results = `Function ${func.name} not found. Please, check and try again`;
             return func;
@@ -225,7 +205,6 @@ async function functionCall(
 
           func.status = 'pending';
           try {
-            console.log(`[functionCall] Executing function: ${func.name}`);
             const actionResponse = await Promise.resolve(action({ ...func.args, _metadata: { user, thread, extId } }));
             if (typeof actionResponse === 'object' && actionResponse.__media__) {
               const { __media__, ...actionResult } = actionResponse;
@@ -237,9 +216,7 @@ async function functionCall(
               func.results = actionResponse || { message: 'function call returned `undefined`' };
             }
             func.status = 'ok';
-            console.log(`[functionCall] Function ${func.name} executed successfully`);
           } catch (err) {
-            console.log('[functionCall] Error executing function', func.name, err);
             func.status = 'failed';
             func.results = { error: { code: 'FUNCTION_ERROR', ...err?.error } };
           }
@@ -268,9 +245,7 @@ async function functionCall(
           content: assistantMessage,
         });
 
-        console.log(`[functionCall] Recursively calling functionCall for next iteration`);
-
-        return await withHooks(functionCall).bind(this)(
+        await withHooks(functionCall).bind(this)(
           {
             resources,
             input: '',
@@ -288,10 +263,14 @@ async function functionCall(
       }
     }
   }
-
-  console.log(`[functionCall] Finished iteration ${iterations}`);
   // 11. Return Response
-  return functionAgentResponse;
+  return {
+    ...functionAgentResponse,
+    input: formattedInput,
+    __tags__: {
+      threadId: thread.extId,
+    }
+  };
 };
 
 export default functionCall;

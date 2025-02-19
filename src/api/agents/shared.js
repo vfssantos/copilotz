@@ -115,30 +115,51 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function getThreadHistory(threadId, { functionName, maxRetries, toAppend }) {
 
-  console.log(`[getThreadHistory] Getting thread history for ${threadId} with functionName ${functionName}`);
-
   const { models } = this;
 
   maxRetries = maxRetries || 10;
 
   // 1.1. If Last Log Exists, Add to Chat Logs
-  const lastLog = (await models.logs.find({
-    "name": functionName, 
-    "input.0.thread.extId": threadId,
+  const logs = (await models.logs.find({
+    "name": functionName,
+    "tags.threadId": threadId,
     "status": "completed",
     "hidden": null,
-  }, { sort: { createdAt: -1 }, limit: 5 }))
+  }, { sort: { createdAt: -1 }, limit: 50 }))
     .map(log => log.output)
-    .find(Boolean);
+    .filter(Boolean) || [];
+
+  console.log('logs', logs);
 
   // 1.1.1 Remove all system messages from lastLog.output.prompt
-  if (lastLog?.prompt?.length) {
-    lastLog.prompt = lastLog?.prompt?.filter(message => message.role !== 'system');
-  }
-  console.log(`[getThreadHistory] Fetched last log for ${threadId} with functionName ${functionName}`);
-  return lastLog
+  // if (lastLog?.prompt?.length) {
+  //   lastLog.prompt = lastLog?.prompt?.filter(message => message.role !== 'system');
+  // }
 
+  console.log('logs', logs);
+  const messageLogs = [];
+  logs.forEach(log => {
+    const { input, ...output } = log;
+
+    const question = {
+      role: 'user',
+      content: (input && typeof input === 'string') ? input : JSON.stringify(input)
+    }
+    const answer = {
+      role: 'assistant',
+      content: (output && typeof output === 'string') ? output : JSON.stringify(output)
+    }
+
+    messageLogs.push(question);
+    messageLogs.push(answer);
+
+  })
+
+  return messageLogs.reverse();
 }
+
+
+
 
 export default (shared) => {
   return {

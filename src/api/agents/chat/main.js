@@ -46,8 +46,6 @@ async function chatAgent(
 ) {
     agentType = agentType || 'chat';
 
-    console.log(`[chatAgent] Starting chat agent`);
-
     // 1. Extract Modules, Resources, Utils, and Dependencies
     const {
         __tags__,
@@ -60,7 +58,7 @@ async function chatAgent(
     } = this || chatAgent;
 
     // 1.1 Extract Utils
-    const { createPrompt, getThreadHistory, jsonSchemaToShortSchema } = utils;
+    const { createPrompt, getThreadHistory } = utils;
 
     // 1.2 Extract Dependencies
     const { ai, agents } = modules;
@@ -84,24 +82,12 @@ async function chatAgent(
     // 3. Get Thread Logs
 
     if (!threadLogs || !threadLogs?.length) {
-        console.log(
-            `[chatAgent] Fetching thread history for threadId: ${threadId}`
-        );
-        const lastLog = await getThreadHistory(thread.extId, { functionName: 'chatAgent', maxRetries: 10 })
-        if (lastLog) {
-            const { prompt, ...agentResponse } = lastLog;
-            threadLogs = prompt || [];
-            const validatedLastAgentResponse = validate(jsonSchemaToShortSchema(outputSchema), agentResponse);
-            threadLogs.push({ role: 'assistant', content: validatedLastAgentResponse.message });
-        } else {
-            threadLogs = [];
-        }
+        threadLogs = await getThreadHistory(thread.extId, { functionName: 'chatAgent', maxRetries: 10 })
     }
 
     // 4. Process User Input
     // 4.1. If User Input Exists, Add to Chat Logs
     if (input) {
-        console.log(`[chatAgent] Adding user input to chat logs`);
         threadLogs.push({
             role: 'user',
             content: input,
@@ -110,7 +96,6 @@ async function chatAgent(
 
     // 4.2. If Audio Exists, Transcribe to Text and Add to Chat Logs
     if (audio) {
-        console.log(`[chatAgent] Audio input detected, starting transcription`);
         const transcriber = await withHooks(await agents('transcriber'));
         const { message: transcribedText } = await transcriber.bind(this)({
             audio,
@@ -121,12 +106,10 @@ async function chatAgent(
             role: 'user',
             content: transcribedText,
         };
-        console.log(`[chatAgent] Audio transcribed and added to chat logs`);
         threadLogs.push(transcribedMessage);
     }
 
     // 5. Create Prompt
-    console.log(`[chatAgent] Creating prompt`);
     // 5.1 Create Prompt Variables
     const promptVariables = {
         copilotPrompt: createPrompt(copilotPromptTemplate, {
@@ -162,18 +145,12 @@ async function chatAgent(
     });
 
     // 7. Execute AI Chat
-    // 7.1. Assign configuration to AI Chat
-
-    // 7.2. Execute AI Chat
-    console.log(`[chatAgent] Executing AI chat with provider: ${provider}`);
-    const { prompt, tokens, answer: assistantAnswer } = await aiChat(
+    const { tokens, answer: assistantAnswer } = await aiChat(
         { instructions: fullPrompt, messages: threadLogs, answer },
         config.streamResponseBy === 'token' ? res.stream : () => { }
     );
 
     // 8. Prepare Response
-    console.log(`[chatAgent] Preparing response`);
-
     // Ensure 'message' is a string
     const message =
         typeof assistantAnswer === 'string'
@@ -182,16 +159,18 @@ async function chatAgent(
 
     // 9. Construct Response Object
     const response = {
-        prompt, // Array of messages with 'role' and 'content'
         message,
+        input: input,
         consumption: {
             type: 'tokens',
             value: tokens,
         },
+        __tags__: {
+            threadId: threadId,
+        }
     };
 
     // 10. Return Response
-    console.log(`[chatAgent] Returning response`);
     return response;
 };
 

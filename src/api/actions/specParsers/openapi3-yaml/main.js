@@ -134,19 +134,20 @@ const ParseOpenApiSpec = ({ specs, ...tool }) => {
 
 
       // Adding POST / JSON params
-      if (details.requestBody && details.requestBody.content) {
-        const content = details.requestBody.content["application/json"];
-        if (content && content.schema) {
-          const bodyJsonSchema = content.schema;
-          if (bodyJsonSchema?.properties) {
-            bodyJsonSchema.properties._metadata = metadataSchema;
-          }
-          action.schemas.push({
-            key: "body",
-            value: bodyJsonSchema,
-            validator: data => validate(jsonSchemaToShortSchema(bodyJsonSchema), data),
-          });
+      if (['POST', 'PUT', 'PATCH'].includes(method?.toUpperCase()) || (details.requestBody && details.requestBody.content)) {
+        let content = details?.requestBody?.content?.["application/json"];
+        if (!content) content = {};
+        if (!content.schema) content.schema = {};
+        const bodyJsonSchema = content.schema;
+        if (!bodyJsonSchema?.properties) {
+          bodyJsonSchema.properties = {};
         }
+        bodyJsonSchema.properties._metadata = metadataSchema;
+        action.schemas.push({
+          key: "body",
+          value: bodyJsonSchema,
+          validator: data => validate(jsonSchemaToShortSchema(bodyJsonSchema), data),
+        });
       }
 
       const parameterSchemas = paramsToJsonSchema(parameters);
