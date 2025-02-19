@@ -142,8 +142,8 @@ async function getThreadHistory(threadId, { functionName, maxRetries, toAppend }
       content: (output && typeof output === 'string') ? output : JSON.stringify(output)
     }
 
-    messageLogs.push(question);
-    messageLogs.push(answer);
+    input && messageLogs.push(question);
+    output && messageLogs.push(answer);
 
   })
 

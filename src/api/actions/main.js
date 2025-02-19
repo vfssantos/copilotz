@@ -55,7 +55,7 @@ async function actionExecutor({ specs, specType, module: moduleUrl, config }) {
 
     await Promise.all(parsedSpecs.actions.map(async ({ name, spec, ...data }) => {
         const mod = await import(moduleUrl).then(m => m.default);
-        const __tags__ = { action: name };
+        const __tags__ = { action: name, threadId: this.threadId };
         const fn = withHooks(mod).bind({
             __tags__,
             ...this,

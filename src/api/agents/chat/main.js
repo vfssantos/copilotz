@@ -135,6 +135,9 @@ async function chatAgent(
 
     const aiChat = aiChatProvider.bind({
         __requestId__,
+        __tags__: {
+            threadId: threadId,
+        },
         config: {
             ...providerOptions,
             apiKey:

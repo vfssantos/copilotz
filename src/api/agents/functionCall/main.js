@@ -58,7 +58,10 @@ async function functionCall(
     // 2.1. Execute actions
     const actionsObj = (await Promise.all(
       copilotz.actions.map(async (_action) => {
-        const action = await actionExecutor.bind(this)({
+        const action = await actionExecutor.bind({
+          ...this,
+          threadId: thread?.extId,
+        })({
           specs: _action.spec,
           specType: _action.specType,
           module: _action.moduleUrl
